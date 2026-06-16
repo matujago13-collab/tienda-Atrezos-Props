@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atrezos & Props</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sage:   #9CAF88;
+  --arena:  #d1c6b4;
+  --bosque: #506549;
+  --crema:  #f5f0ea;
+  --negro:  #1a1a1a;
+  --blanco: #ffffff;
+  --alerta: #d9a273;
+  --feria:  #b06030;
+  --danger: #b85c5c;
+  --shadow: 0 2px 12px rgba(0,0,0,0.07);
+  --shadow-lg: 0 8px 28px rgba(0,0,0,0.1);
+}
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Jost', sans-serif; background: var(--blanco); color: var(--negro); min-height: 100vh; overflow-x: hidden; }
+
+/* ── NAV ── */
+nav {
+  position: sticky; top: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 40px;
+  background: rgba(255,255,255,0.95); backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  gap: 12px;
+}
+.nav-left { display: flex; align-items: center; gap: 10px; }
+.nav-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--bosque); text-decoration: none; }
+.feria-badge {
+  background: var(--feria); color: #fff;
+  font-size: 0.68rem; font-weight: 700; padding: 3px 9px;
+  border-radius: 20px; letter-spacing: 0.06em;
+  display: none; align-items: center;
+}
+.feria-badge.visible { display: flex; }
+.nav-right { display: flex; align-items: center; gap: 12px; }
+.nav-contact { font-size: 0.76rem; color: #888; }
+.cart-btn {
+  background: var(--bosque); color: #fff;
+  border: none; border-radius: 50px;
+  padding: 9px 20px; cursor: pointer;
+  font-size: 0.82rem; font-weight: 500; font-family: 'Jost', sans-serif;
+  display: flex; align-items: center; gap: 8px;
+  transition: background 0.2s; letter-spacing: 0.04em;
+}
+.cart-btn:hover { background: #3a4d34; }
+.cart-count {
+  background: var(--sage); color: #fff;
+  border-radius: 50%; width: 20px; height: 20px;
+  font-size: 0.72rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.2s;
+}
+.cart-count.bump { animation: bump 0.3s ease; }
+@keyframes bump { 0%,100%{transform:scale(1)} 50%{transform:scale(1.4)} }
+
+/* ── FERIA BANNER ── */
+.feria-banner {
+  background: linear-gradient(135deg, var(--bosque), #3a4d34);
+  color: #fff; text-align: center; padding: 14px 20px; display: none;
+}
+.feria-banner.visible { display: block; }
+.feria-banner h2 { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; font-weight: 400; font-style: italic; }
+.feria-banner p { font-size: 0.78rem; opacity: 0.8; margin-top: 3px; }
+
+/* ── TOOLBAR: Búsqueda + Filtros ── */
+.toolbar {
+  background: var(--crema);
+  border-bottom: 1px solid var(--arena);
+  padding: 0 40px;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+.search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  border-right: 1px solid var(--arena);
+  padding-right: 20px;
+  flex-shrink: 0;
+}
+.search-wrap svg { color: #aaa; flex-shrink: 0; }
+.search-input {
+  border: none; background: transparent;
+  font-family: 'Jost', sans-serif; font-size: 0.82rem;
+  color: var(--negro); outline: none; width: 200px;
+}
+.search-input::placeholder { color: #bbb; }
+.filters {
+  display: flex; gap: 0; overflow-x: auto;
+  scrollbar-width: none; flex: 1;
+}
+.filters::-webkit-scrollbar { display: none; }
+.filter-btn {
+  padding: 14px 20px; font-size: 0.74rem; font-weight: 500;
+  letter-spacing: 0.07em; text-transform: uppercase;
+  color: #888; cursor: pointer;
+  border-bottom: 2px solid transparent; white-space: nowrap;
+  background: none; border-top: none; border-left: none; border-right: none;
+  font-family: 'Jost', sans-serif; transition: all 0.2s;
+}
+.filter-btn:hover { color: var(--bosque); }
+.filter-btn.active { color: var(--bosque); border-bottom-color: var(--bosque); font-weight: 500; }
+
+/* ── MAIN ── */
+main { max-width: 1280px; margin: 0 auto; padding: 48px 40px 100px; }
+
+/* ── EMPTY SEARCH ── */
+.empty-search {
+  text-align: center; padding: 80px 20px; color: #aaa;
+  display: none;
+}
+.empty-search .emoji { font-size: 2.5rem; margin-bottom: 12px; }
+.empty-search p { font-size: 0.9rem; }
+
+/* ── SECCIÓN ── */
+.category-section { margin-bottom: 64px; }
+.category-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem; font-weight: 300; color: var(--negro); margin-bottom: 8px;
+}
+.category-title em { font-style: italic; color: var(--bosque); }
+.category-desc { font-size: 0.82rem; color: #888; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--arena); }
+
+/* ── GRID ── */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 22px;
+}
+
+/* ── TARJETA ── */
+.card {
+  background: var(--blanco); border: 1px solid var(--arena);
+  border-radius: 8px; overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex; flex-direction: column; position: relative;
+}
+.card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+.card.agotado { opacity: 0.65; }
+
+.agotado-badge {
+  position: absolute; top: 10px; right: 10px; z-index: 2;
+  background: var(--danger); color: #fff;
+  font-size: 0.66rem; font-weight: 700; padding: 3px 8px;
+  border-radius: 3px; letter-spacing: 0.05em;
+}
+
+/* Imagen con hover */
+.img-container {
+  width: 100%; aspect-ratio: 4/5; background: var(--crema);
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.img-container img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: contain; transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.img-main   { opacity: 1; z-index: 1; }
+.img-sample { opacity: 0; z-index: 2; }
+.card:hover .img-main   { opacity: 0; transform: scale(1.04); }
+.card:hover .img-sample { opacity: 1; }
+
+/* ── CARD INFO ── */
+.card-info { padding: 14px 16px 16px; display: flex; flex-direction: column; flex: 1; }
+.stock-tag {
+  font-size: 0.68rem; font-weight: 600; padding: 3px 7px;
+  border-radius: 3px; display: inline-block;
+  margin-bottom: 8px; letter-spacing: 0.04em;
+}
+.disponible { background: #eef2eb; color: var(--bosque); }
+.urgencia   { background: #fdf2e9; color: var(--alerta); }
+.sin-stock  { background: #f5e8e8; color: var(--danger); }
+
+.card-name {
+  font-size: 0.88rem; color: var(--bosque);
+  font-weight: 500; line-height: 1.4; flex: 1; margin-bottom: 10px;
+}
+.card-desc { font-size: 0.78rem; color: #888; line-height: 1.4; margin-bottom: 12px; }
+.card-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; }
+
+/* ── BLOQUE DE PRECIOS ── */
+.price-block { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.price-normal {
+  font-family: 'Jost', sans-serif; font-size: 0.75rem;
+  font-weight: 400; color: #aaa; line-height: 1.2;
+}
+.price-normal.tachado { text-decoration: line-through; color: #bbb; }
+.price-feria {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.25rem; font-weight: 700; color: var(--bosque); line-height: 1.15;
+}
+.price-feria.activa { color: var(--feria); }
+.price-feria-label {
+  font-size: 0.62rem; color: var(--feria);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  font-weight: 600; font-family: 'Jost', sans-serif;
+}
+.card-price {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.2rem; font-weight: 600; color: var(--negro);
+}
+.no-price { font-size: 0.78rem; color: #aaa; font-style: italic; }
+
+.add-btn {
+  border: none; border-radius: 4px; padding: 9px 14px;
+  cursor: pointer; font-size: 0.74rem; font-weight: 500;
+  font-family: 'Jost', sans-serif; letter-spacing: 0.07em;
+  text-transform: uppercase; transition: all 0.2s; white-space: nowrap; flex-shrink: 0;
+}
+.add-btn.agregar { background: var(--sage); color: #fff; }
+.add-btn.agregar:hover { background: var(--bosque); }
+.add-btn.interesa { background: var(--blanco); color: var(--bosque); border: 1.5px solid var(--bosque); }
+.add-btn.interesa:hover { background: var(--bosque); color: #fff; }
+.add-btn:disabled { background: var(--arena); color: #999; cursor: default; }
+
+/* ── CARRITO PANEL ── */
+.cart-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  z-index: 298; opacity: 0; pointer-events: none; transition: opacity 0.25s;
+}
+.cart-overlay.open { opacity: 1; pointer-events: all; }
+.cart-panel {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: min(400px, 100vw); background: var(--blanco);
+  z-index: 299; transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+  display: flex; flex-direction: column;
+  box-shadow: -4px 0 30px rgba(0,0,0,0.12);
+}
+.cart-panel.open { transform: translateX(0); }
+.cart-header {
+  padding: 20px 22px; border-bottom: 1px solid var(--arena);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.cart-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; font-weight: 400; font-style: italic; }
+.close-btn {
+  background: var(--crema); border: none; border-radius: 50%;
+  width: 32px; height: 32px; cursor: pointer; font-size: 1rem; color: #555;
+  display: flex; align-items: center; justify-content: center; transition: background 0.2s;
+}
+.close-btn:hover { background: var(--arena); }
+.cart-items { flex: 1; overflow-y: auto; padding: 16px 22px; }
+.cart-empty { text-align: center; padding: 52px 20px; color: #aaa; }
+.cart-empty p { font-size: 0.85rem; margin-top: 8px; }
+.cart-item {
+  display: flex; gap: 12px; padding: 13px 0;
+  border-bottom: 1px solid var(--crema); align-items: flex-start;
+}
+.cart-item img { width: 62px; height: 62px; object-fit: cover; border-radius: 4px; background: var(--crema); flex-shrink: 0; }
+.cart-item-info { flex: 1; min-width: 0; }
+.cart-item-name { font-size: 0.84rem; font-weight: 500; color: var(--negro); line-height: 1.3; }
+.cart-item-price { font-size: 0.78rem; color: #888; margin-top: 2px; }
+.cart-item-price.feria-price { color: var(--feria); font-weight: 600; }
+.cart-item-controls { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.qty-btn {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 1.5px solid var(--arena); background: var(--blanco);
+  cursor: pointer; font-size: 1rem; color: #555;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.15s, color 0.15s;
+}
+.qty-btn:hover { border-color: var(--bosque); color: var(--bosque); }
+.qty-num { font-size: 0.85rem; font-weight: 600; min-width: 18px; text-align: center; }
+.remove-btn { background: none; border: none; cursor: pointer; color: #ccc; font-size: 0.74rem; padding: 0; margin-left: auto; transition: color 0.15s; }
+.remove-btn:hover { color: var(--danger); }
+.cart-footer { padding: 16px 22px 22px; border-top: 1px solid var(--arena); }
+.cart-total { display: flex; justify-content: space-between; font-size: 0.95rem; font-weight: 600; margin-bottom: 14px; }
+.cart-total span:last-child { color: var(--bosque); font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; }
+.wa-order-btn {
+  width: 100%; background: #25d366; color: #fff; border: none;
+  border-radius: 50px; padding: 14px; cursor: pointer;
+  font-size: 0.84rem; font-weight: 600; font-family: 'Jost', sans-serif;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  letter-spacing: 0.04em; transition: background 0.2s;
+}
+.wa-order-btn:hover { background: #1ebe5d; }
+.wa-icon { width: 20px; height: 20px; fill: #fff; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--negro); color: #fff;
+  padding: 10px 22px; border-radius: 50px;
+  font-size: 0.82rem; z-index: 400;
+  transition: transform 0.3s; pointer-events: none; white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.warn { background: var(--feria); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  nav { padding: 12px 16px; }
+  .nav-contact { display: none; }
+  .toolbar { padding: 0 12px; flex-wrap: wrap; }
+  .search-wrap { border-right: none; padding-right: 0; border-bottom: 1px solid var(--arena); width: 100%; }
+  .search-input { width: 100%; }
+  main { padding: 28px 16px 80px; }
+  .products-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .category-title { font-size: 1.5rem; }
+}
+@media (max-width: 380px) {
+  .products-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+    <a class="nav-logo" id="store-name" href="#">Tienda</a>
+    <span class="feria-badge" id="feria-badge">🏷 FERIA</span>
+  </div>
+  <div class="nav-right">
+    <span class="nav-contact" id="nav-tel"></span>
+    <button class="cart-btn" onclick="abrirCarrito()" aria-label="Ver carrito">
+      🛒 <span class="cart-count" id="cart-count">0</span>
+    </button>
+  </div>
+</nav>
+
+<div class="feria-banner" id="feria-banner">
+  <h2>🏷 ¡Estamos en Feria! Precios especiales del día</h2>
+  <p>Consultá por combos y descuentos adicionales</p>
+</div>
+
+<div class="toolbar">
+  <div class="search-wrap">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input class="search-input" id="search-input" type="text" placeholder="Buscar productos…" oninput="buscar(this.value)">
+  </div>
+  <div class="filters" id="filters"></div>
+</div>
+
+<main>
+  <div id="catalog"></div>
+  <div class="empty-search" id="empty-search">
+    <div class="emoji">🔍</div>
+    <p>No encontramos productos con esa búsqueda</p>
+  </div>
+</main>
+
+<!-- CARRITO -->
+<div class="cart-overlay" id="cart-overlay" onclick="cerrarCarrito()"></div>
+<div class="cart-panel" id="cart-panel">
+  <div class="cart-header">
+    <h2 id="cart-panel-title">Tu consulta</h2>
+    <button class="close-btn" onclick="cerrarCarrito()">✕</button>
+  </div>
+  <div class="cart-items" id="cart-items"></div>
+  <div class="cart-footer" id="cart-footer" style="display:none">
+    <div class="cart-total" id="cart-total-row">
+      <span>Total</span>
+      <span id="cart-total-price"></span>
+    </div>
+    <button class="wa-order-btn" onclick="pedirPorWhatsApp()">
+      <svg class="wa-icon" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.093.539 4.062 1.485 5.772L0 24l6.382-1.473C8.044 23.447 9.99 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.87 0-3.628-.494-5.145-1.358l-.368-.212-3.791.874.907-3.695-.237-.384C2.516 15.613 2 13.863 2 12 2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+      <span id="wa-btn-label">Consultar por WhatsApp</span>
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+//  CONSTANTES
+// ══════════════════════════════════════════════════════════════════
+const SK = 'ap_productos_v2';
+
+// Datos de fallback (cuando no hay localStorage ni productos.json)
+const FALLBACK = {
+  config: {
+    nombreTienda: 'Atrezos & Props',
+    modoFeria: false,
+    whatsapp: '595981234567',
+    mensajeWhatsapp: 'Hola! Me interesa hacer un pedido:',
+    moneda: 'Gs.',
+    telefono: '0986 332140'
+  },
+  categorias: []
+};
+
+let datos = null;
+let carrito = [];
+let categoriaActiva = 'todas';
+let terminoBusqueda = '';
+
+// ══════════════════════════════════════════════════════════════════
+//  CARGA DE DATOS
+//  Prioridad: localStorage → productos.json → fallback vacío
+// ══════════════════════════════════════════════════════════════════
+async function cargarDatos() {
+  // 1. Intentar localStorage primero
+  try {
+    const guardado = JSON.parse(localStorage.getItem(SK));
+    if (guardado && guardado.config && guardado.categorias) {
+      datos = guardado;
+      inicializar();
+      return;
+    }
+  } catch(e) {}
+
+  // 2. Intentar productos.json
+  try {
+    const res = await fetch('productos.json');
+    if (!res.ok) throw new Error();
+    const json = await res.json();
+    if (json.categorias && json.config) {
+      datos = json;
+      // Guardar en localStorage para sincronización futura
+      localStorage.setItem(SK, JSON.stringify(datos));
+      inicializar();
+      return;
+    }
+  } catch(e) {}
+
+  // 3. Fallback
+  datos = FALLBACK;
+  inicializar();
+}
+
+// Escuchar cambios de Admin en tiempo real (cross-tab)
+window.addEventListener('storage', e => {
+  if (e.key === SK && e.newValue) {
+    try {
+      const nuevo = JSON.parse(e.newValue);
+      if (nuevo && nuevo.config && nuevo.categorias) {
+        datos = nuevo;
+        // Limpiar carrito con items que ya no existen
+        const todosIds = nuevo.categorias.flatMap(c => c.productos.map(p => p.id));
+        carrito = carrito.filter(i => todosIds.includes(i.id));
+        inicializar();
+        mostrarToast('Catálogo actualizado ✓');
+      }
+    } catch(e) {}
+  }
+});
+
+function inicializar() {
+  const { config, categorias } = datos;
+  document.getElementById('store-name').textContent = config.nombreTienda;
+  document.title = config.nombreTienda;
+  if (config.telefono) document.getElementById('nav-tel').textContent = config.telefono;
+
+  const feriaVisible = config.modoFeria;
+  document.getElementById('feria-badge').classList.toggle('visible', feriaVisible);
+  document.getElementById('feria-banner').classList.toggle('visible', feriaVisible);
+
+  renderFiltros(categorias);
+  renderCatalogo(categorias, config);
+  actualizarCarritoUI();
+}
+
+// ── FILTROS ────────────────────────────────────────────────────────
+function renderFiltros(categorias) {
+  const el = document.getElementById('filters');
+  el.innerHTML =
+    `<button class="filter-btn active" onclick="filtrar('todas',this)">Todos</button>` +
+    categorias.map(c =>
+      `<button class="filter-btn" onclick="filtrar('${c.id}',this)">${c.nombre}</button>`
+    ).join('');
+}
+
+function filtrar(id, btn) {
+  categoriaActiva = id;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  aplicarFiltros();
+}
+
+function buscar(val) {
+  terminoBusqueda = val.trim().toLowerCase();
+  aplicarFiltros();
+}
+
+function aplicarFiltros() {
+  let hayResultados = false;
+
+  document.querySelectorAll('.category-section').forEach(sec => {
+    const catId = sec.dataset.cat;
+    const mostrarCat = (categoriaActiva === 'todas' || catId === categoriaActiva);
+    if (!mostrarCat) { sec.style.display = 'none'; return; }
+
+    const cards = sec.querySelectorAll('.card[data-nombre]');
+    let visibles = 0;
+    cards.forEach(card => {
+      const nombre = card.dataset.nombre.toLowerCase();
+      const coincide = !terminoBusqueda || nombre.includes(terminoBusqueda);
+      card.style.display = coincide ? '' : 'none';
+      if (coincide) visibles++;
+    });
+
+    sec.style.display = visibles > 0 ? 'block' : 'none';
+    if (visibles > 0) hayResultados = true;
+  });
+
+  document.getElementById('empty-search').style.display = hayResultados ? 'none' : 'block';
+}
+
+// ── CATÁLOGO ───────────────────────────────────────────────────────
+function renderCatalogo(categorias, config) {
+  document.getElementById('catalog').innerHTML = categorias.map(cat => `
+    <section class="category-section" data-cat="${cat.id}">
+      <h2 class="category-title"><em>${cat.nombre}</em></h2>
+      <p class="category-desc">${cat.descripcion || 'Seleccioná los que te interesan y consultanos por WhatsApp.'}</p>
+      <div class="products-grid">
+        ${cat.productos.map(p => renderTarjeta(p, config)).join('')}
+      </div>
+    </section>
+  `).join('');
+}
+
+function stockTag(disponible, stock) {
+  // stock numérico tiene prioridad
+  if (typeof stock === 'number') {
+    if (stock <= 0) return { clase: 'sin-stock', texto: 'Sin stock' };
+    if (stock === 1) return { clase: 'urgencia', texto: '¡Última unidad!' };
+    return { clase: 'disponible', texto: 'Disponible' };
+  }
+  if (disponible === false || disponible === 0) return { clase: 'sin-stock', texto: 'Sin stock' };
+  if (disponible === 1) return { clase: 'urgencia', texto: '¡Última unidad!' };
+  return { clase: 'disponible', texto: 'Disponible' };
+}
+
+function estaAgotado(p) {
+  if (typeof p.stock === 'number') return p.stock <= 0;
+  return p.disponible === false || p.disponible === 0;
+}
+
+function formatPrecio(precio, moneda) {
+  return (moneda || 'Gs.') + ' ' + Number(precio).toLocaleString('es-PY');
+}
+
+function renderPrecioBlock(p, config) {
+  const { modoFeria, moneda } = config;
+  const pNormal = p.precioNormal || p.precio || 0;
+  const pFeria  = p.precioFeria  || 0;
+
+  if (pNormal === 0 && pFeria === 0) return `<span class="no-price">Consultá precio</span>`;
+
+  if (modoFeria && pNormal > 0 && pFeria > 0) {
+    return `<div class="price-block">
+      <span class="price-normal tachado">${formatPrecio(pNormal, moneda)}</span>
+      <span class="price-feria activa">${formatPrecio(pFeria, moneda)}</span>
+    </div>`;
+  }
+  if (modoFeria && pFeria > 0 && pNormal === 0) {
+    return `<div class="price-block">
+      <span class="price-feria-label">🏷 Feria</span>
+      <span class="price-feria activa">${formatPrecio(pFeria, moneda)}</span>
+    </div>`;
+  }
+  if (modoFeria && pNormal > 0 && pFeria === 0) {
+    return `<span class="card-price">${formatPrecio(pNormal, moneda)}</span>`;
+  }
+  if (!modoFeria && pNormal > 0 && pFeria > 0) {
+    return `<div class="price-block">
+      <span class="card-price">${formatPrecio(pNormal, moneda)}</span>
+      <span class="price-normal" style="color:#c8956a;font-size:0.7rem">🏷 Feria: ${formatPrecio(pFeria, moneda)}</span>
+    </div>`;
+  }
+  if (pNormal > 0) return `<span class="card-price">${formatPrecio(pNormal, moneda)}</span>`;
+  if (pFeria > 0)  return `<span class="card-price">${formatPrecio(pFeria, moneda)}</span>`;
+  return `<span class="no-price">Consultá precio</span>`;
+}
+
+function renderTarjeta(p, config) {
+  const { modoFeria } = config;
+  const agotado = estaAgotado(p);
+  const tag = stockTag(p.disponible, p.stock);
+  const imgPrincipal = p.imagen || p.foto1 || '';
+  const imgMuestra   = p.imagenMuestra || p.foto2 || imgPrincipal;
+  const precioHTML   = renderPrecioBlock(p, config);
+
+  const btnHTML = agotado
+    ? `<button class="add-btn" disabled>Agotado</button>`
+    : modoFeria
+      ? `<button class="add-btn agregar" onclick="agregarAlCarrito(${p.id})">+ Agregar</button>`
+      : `<button class="add-btn interesa" onclick="agregarAlCarrito(${p.id})">♡ Me interesa</button>`;
+
+  return `
+    <div class="card${agotado ? ' agotado' : ''}" data-nombre="${p.nombre.toLowerCase()}">
+      ${agotado ? '<span class="agotado-badge">Sin stock</span>' : ''}
+      <div class="img-container">
+        <img class="img-main"   src="${imgPrincipal}" alt="${p.nombre}" loading="lazy">
+        <img class="img-sample" src="${imgMuestra}"   alt="${p.nombre} — muestra" loading="lazy">
+      </div>
+      <div class="card-info">
+        <span class="stock-tag ${tag.clase}">${tag.texto}</span>
+        <div class="card-name">${p.nombre}</div>
+        ${p.descripcion ? `<div class="card-desc">${p.descripcion}</div>` : ''}
+        <div class="card-footer">
+          ${precioHTML}
+          ${btnHTML}
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── CARRITO ─────────────────────────────────────────────────────────
+function todosLosProductos() {
+  return datos.categorias.flatMap(c => c.productos);
+}
+
+function precioEfectivo(p, modoFeria) {
+  const pNormal = p.precioNormal || p.precio || 0;
+  const pFeria  = p.precioFeria  || 0;
+  if (modoFeria && pFeria > 0) return pFeria;
+  return pNormal;
+}
+
+function stockDisponible(p) {
+  if (typeof p.stock === 'number') return p.stock;
+  return p.disponible ? 999 : 0; // boolean → ilimitado o 0
+}
+
+function agregarAlCarrito(id) {
+  const p = todosLosProductos().find(p => p.id === id);
+  if (!p || estaAgotado(p)) return;
+
+  const stockMax = stockDisponible(p);
+  const item = carrito.find(i => i.id === id);
+  const cantActual = item ? item.qty : 0;
+
+  if (cantActual >= stockMax) {
+    mostrarToast(`Solo hay ${stockMax} unidad${stockMax !== 1 ? 'es' : ''} disponible${stockMax !== 1 ? 's' : ''}`, true);
+    return;
+  }
+
+  if (item) item.qty++;
+  else carrito.push({ ...p, qty: 1 });
+  actualizarCarritoUI();
+  mostrarToast(`"${p.nombre.slice(0,30)}" agregado`);
+  animarContador();
+}
+
+function cambiarCantidad(id, delta) {
+  const item = carrito.find(i => i.id === id);
+  if (!item) return;
+
+  if (delta > 0) {
+    const p = todosLosProductos().find(p => p.id === id);
+    if (p && item.qty >= stockDisponible(p)) {
+      mostrarToast('Llegaste al máximo de stock disponible', true);
+      return;
+    }
+  }
+
+  item.qty += delta;
+  if (item.qty <= 0) carrito = carrito.filter(i => i.id !== id);
+  actualizarCarritoUI();
+}
+
+function actualizarCarritoUI() {
+  const { config } = datos;
+  const modoFeria = config.modoFeria;
+  const total = carrito.reduce((s, i) => s + precioEfectivo(i, modoFeria) * i.qty, 0);
+  const count = carrito.reduce((s, i) => s + i.qty, 0);
+  document.getElementById('cart-count').textContent = count;
+
+  const itemsEl  = document.getElementById('cart-items');
+  const footerEl = document.getElementById('cart-footer');
+
+  if (carrito.length === 0) {
+    itemsEl.innerHTML = `<div class="cart-empty">🛒<p>Todavía no agregaste productos</p></div>`;
+    footerEl.style.display = 'none';
+    return;
+  }
+
+  footerEl.style.display = 'block';
+  document.getElementById('cart-panel-title').textContent = modoFeria ? 'Tu pedido' : 'Tu consulta';
+  document.getElementById('cart-total-row').style.display = modoFeria ? 'flex' : 'none';
+  document.getElementById('wa-btn-label').textContent = modoFeria ? 'Pedir por WhatsApp' : 'Consultar por WhatsApp';
+  if (modoFeria) document.getElementById('cart-total-price').textContent = formatPrecio(total, config.moneda);
+
+  itemsEl.innerHTML = carrito.map(i => {
+    const pe = precioEfectivo(i, modoFeria);
+    const esFeria = modoFeria && (i.precioFeria || 0) > 0;
+    const imgSrc = i.imagen || i.foto1 || '';
+    return `<div class="cart-item">
+      <img src="${imgSrc}" alt="${i.nombre}" onerror="this.style.opacity='.2'">
+      <div class="cart-item-info">
+        <div class="cart-item-name">${i.nombre}</div>
+        ${pe > 0 ? `<div class="cart-item-price${esFeria ? ' feria-price' : ''}">${formatPrecio(pe, config.moneda)} c/u${esFeria ? ' 🏷' : ''}</div>` : ''}
+        <div class="cart-item-controls">
+          <button class="qty-btn" onclick="cambiarCantidad(${i.id},-1)">−</button>
+          <span class="qty-num">${i.qty}</span>
+          <button class="qty-btn" onclick="cambiarCantidad(${i.id},1)">+</button>
+          <button class="remove-btn" onclick="cambiarCantidad(${i.id},-999)">Eliminar</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function abrirCarrito() {
+  document.getElementById('cart-panel').classList.add('open');
+  document.getElementById('cart-overlay').classList.add('open');
+}
+function cerrarCarrito() {
+  document.getElementById('cart-panel').classList.remove('open');
+  document.getElementById('cart-overlay').classList.remove('open');
+}
+
+function pedirPorWhatsApp() {
+  const { config } = datos;
+  const modoFeria = config.modoFeria;
+  const total = carrito.reduce((s, i) => s + precioEfectivo(i, modoFeria) * i.qty, 0);
+  let msg;
+  if (modoFeria) {
+    const lineas = carrito.map(i => {
+      const pe = precioEfectivo(i, modoFeria);
+      return `• ${i.qty}x ${i.nombre}${pe > 0 ? ' — ' + formatPrecio(pe * i.qty, config.moneda) : ''}`;
+    }).join('\n');
+    msg = `${config.mensajeWhatsapp}\n\n${lineas}\n\n*Total: ${formatPrecio(total, config.moneda)}*`;
+  } else {
+    const lineas = carrito.map(i => `• ${i.qty}x ${i.nombre}`).join('\n');
+    msg = `Hola! Me interesan estos productos y quiero consultar precios:\n\n${lineas}\n\n¿Me podés dar más info?`;
+  }
+  window.open(`https://wa.me/${config.whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+function mostrarToast(msg, esAlerta = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (esAlerta ? ' warn' : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+function animarContador() {
+  const el = document.getElementById('cart-count');
+  el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
+}
+
+cargarDatos();
+</script>
+</body>
+</html>

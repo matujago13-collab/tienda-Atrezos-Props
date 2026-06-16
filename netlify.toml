@@ -1,0 +1,23 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/upload"
+  to   = "/.netlify/functions/upload"
+  status = 200
+
+[[redirects]]
+  from = "/api/guardar"
+  to   = "/.netlify/functions/guardar"
+  status = 200
+
+[[redirects]]
+  from = "/api/productos"
+  to   = "/.netlify/functions/productos"
+  status = 200
+
+[[redirects]]
+  from = "/api/probar-owncloud"
+  to   = "/.netlify/functions/probar-owncloud"
+  status = 200
