@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Atrezos & Props</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --verde:#506549;--vl:#e8ede7;--feria:#b06030;--fl:#fff4ee;
+  --text:#1a1a1a;--muted:#888;--border:#ddd;--bg:#f8f7f5;--w:#fff;
+  --danger:#b85c5c;--danger-l:#fdecea;
+}
+body{font-family:'Jost',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ── NAV ── */
+nav{background:var(--w);border-bottom:1px solid var(--border);padding:0 1.2rem;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;gap:.8rem}
+.nav-logo{font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-style:italic;color:var(--verde);text-decoration:none;white-space:nowrap}
+.nav-r{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.btn{border:none;padding:.42rem .9rem;font-family:'Jost',sans-serif;font-size:.78rem;cursor:pointer;border-radius:3px;transition:all .2s;white-space:nowrap}
+.btn-p{background:var(--verde);color:#fff}.btn-p:hover{background:#3d4f37}
+.btn-o{background:var(--w);color:var(--verde);border:1px solid var(--verde)}.btn-o:hover{background:var(--vl)}
+.btn-g{background:transparent;color:var(--muted);border:1px solid var(--border)}.btn-g:hover{border-color:var(--verde);color:var(--verde)}
+.btn-danger{background:var(--danger-l);color:var(--danger);border:1px solid #e8c0c0}.btn-danger:hover{background:#f5d5d5}
+.btn-sm{padding:.28rem .65rem;font-size:.72rem}
+
+/* ── CONFIG STRIP ── */
+.config-strip{background:var(--w);border-bottom:1px solid var(--border);padding:.55rem 1.2rem;display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap}
+.config-strip label{font-size:.74rem;color:var(--muted);display:flex;align-items:center;gap:.4rem;cursor:pointer;user-select:none}
+.config-strip input[type=checkbox]{accent-color:var(--feria);width:14px;height:14px}
+.config-strip .sep{width:1px;height:18px;background:var(--border)}
+.config-strip span{font-size:.74rem;color:var(--muted)}
+.modo-feria-on{color:var(--feria)!important;font-weight:600}
+
+/* ── TABS ── */
+.tabs{background:var(--w);border-bottom:1px solid var(--border);padding:0 1.2rem;display:flex;gap:0;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:.65rem 1.1rem;font-size:.8rem;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;color:var(--muted);background:none;border-top:none;border-left:none;border-right:none;font-family:'Jost',sans-serif;transition:all .15s}
+.tab:hover{color:var(--verde)}
+.tab.active{color:var(--verde);border-bottom-color:var(--verde);font-weight:500}
+
+/* ── HEADER ── */
+.hdr{max-width:980px;margin:1.6rem auto 0;padding:0 1.2rem}
+.hdr h1{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:400}
+.hdr p{font-size:.76rem;color:var(--muted);margin-top:.2rem}
+
+/* ── PANELES ── */
+.panel{display:none;max-width:980px;margin:1rem auto 4rem;padding:0 1.2rem}
+.panel.active{display:block}
+
+/* ── BLOQUES ── */
+.bloque{background:var(--w);border:1px solid var(--border);border-radius:5px;margin-bottom:.55rem;overflow:hidden}
+.bloque-h{padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background .15s;user-select:none}
+.bloque-h:hover{background:var(--vl)}
+.bloque-t{font-family:'Cormorant Garamond',serif;font-size:.98rem;font-style:italic}
+.bloque-m{display:flex;align-items:center;gap:.7rem}
+.bloque-c{font-size:.7rem;color:var(--muted)}
+.chev{font-size:.62rem;color:var(--muted);transition:transform .2s}
+.bloque.open .chev{transform:rotate(180deg)}
+.bloque-b{display:none;border-top:1px solid var(--border)}
+.bloque.open .bloque-b{display:block}
+
+/* ── TABLE ── */
+table{width:100%;border-collapse:collapse}
+th{font-size:.67rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:400;padding:.5rem .9rem;text-align:left;border-bottom:1px solid var(--border);background:#fafaf9}
+th.r{text-align:right}
+th.fth{text-align:right;color:var(--feria)!important}
+td{padding:.45rem .9rem;border-bottom:1px solid #f0eeec;vertical-align:middle;font-size:.83rem}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafaf9}
+.pn{font-weight:400;line-height:1.3}
+.pid{font-size:.7rem;color:var(--muted)}
+
+/* ── INPUTS ── */
+.pw{display:flex;align-items:center;justify-content:flex-end;gap:.22rem}
+.gs{font-size:.7rem;color:var(--muted)}
+.gsf{font-size:.7rem;color:var(--feria)}
+input[type=number]{width:108px;border:1px solid var(--border);border-radius:3px;padding:.28rem .45rem;font-family:'Jost',sans-serif;font-size:.82rem;text-align:right;transition:border-color .15s;appearance:textfield;-moz-appearance:textfield}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
+input[type=number]:focus{outline:none;border-color:var(--verde)}
+input.changed{border-color:#e8a020;background:#fffdf5}
+input.saved{border-color:var(--verde)}
+input.feria:focus{border-color:var(--feria)}
+input.feria.saved{border-color:var(--feria)}
+input.error{border-color:var(--danger)!important;background:#fdf5f5}
+input[type=text].config-input,input[type=text].field-input{border:1px solid var(--border);border-radius:3px;padding:.28rem .5rem;font-family:'Jost',sans-serif;font-size:.82rem;transition:border-color .15s}
+input[type=text].config-input:focus,input[type=text].field-input:focus{outline:none;border-color:var(--verde)}
+input[type=text].field-input{width:100%}
+select.field-select{border:1px solid var(--border);border-radius:3px;padding:.28rem .5rem;font-family:'Jost',sans-serif;font-size:.82rem;background:var(--w);transition:border-color .15s;width:100%}
+select.field-select:focus{outline:none;border-color:var(--verde)}
+
+/* ── DISP TOGGLE ── */
+.disp-toggle{display:flex;align-items:center;justify-content:center}
+.disp-toggle input[type=checkbox]{accent-color:var(--verde);width:15px;height:15px;cursor:pointer}
+
+/* ── MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-bg.open{display:flex}
+.modal{background:var(--w);border-radius:7px;padding:1.6rem;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,.18);align-self:flex-start}
+.modal h2{font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-style:italic;margin-bottom:1.2rem;color:var(--verde)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem}
+.form-grid .full{grid-column:1/-1}
+.field-lbl{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.3rem;display:block}
+.field-err{font-size:.68rem;color:var(--danger);margin-top:.25rem;display:none}
+.modal-footer{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1.2rem;padding-top:1rem;border-top:1px solid var(--border)}
+
+/* ── SECCIÓN CATEGORÍAS ── */
+.cat-table{width:100%;border-collapse:collapse;margin-bottom:1.2rem}
+.cat-table th{font-size:.67rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:400;padding:.5rem .9rem;text-align:left;border-bottom:1px solid var(--border);background:#fafaf9}
+.cat-table td{padding:.4rem .6rem;border-bottom:1px solid #f0eeec;vertical-align:middle}
+.cat-table tr:last-child td{border-bottom:none}
+.cat-table tr:hover td{background:#fafaf9}
+.cat-inline-input{border:1px solid transparent;border-radius:3px;padding:.28rem .45rem;font-family:'Jost',sans-serif;font-size:.82rem;width:100%;background:transparent;transition:border-color .15s,background .15s}
+.cat-inline-input:hover{border-color:var(--border)}
+.cat-inline-input:focus{outline:none;border-color:var(--verde);background:var(--w)}
+.cat-add{display:flex;gap:.4rem;align-items:center;padding-top:.8rem;border-top:1px solid var(--border)}
+.cat-add input{border:1px solid var(--border);border-radius:3px;padding:.3rem .5rem;font-family:'Jost',sans-serif;font-size:.82rem;flex:1;min-width:0;transition:border-color .15s}
+.cat-add input:focus{outline:none;border-color:var(--verde)}
+
+/* ── CONFIG PANEL ── */
+.config-form{background:var(--w);border:1px solid var(--border);border-radius:5px;padding:1.2rem 1.4rem;margin-bottom:1.2rem}
+.config-form h3{font-family:'Cormorant Garamond',serif;font-size:1.05rem;font-style:italic;margin-bottom:1rem;color:var(--verde)}
+.config-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.8rem}
+.field{display:flex;flex-direction:column;gap:.3rem}
+.field label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:1rem;right:1rem;background:var(--verde);color:#fff;padding:.6rem 1rem;border-radius:4px;font-size:.78rem;opacity:0;transform:translateY(5px);transition:all .25s;pointer-events:none;z-index:999}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.feria-toast{background:var(--feria)}
+.toast.err-toast{background:var(--danger)}
+
+/* ── INFO ── */
+.info{max-width:980px;margin:0 auto;padding:0 1.2rem 2rem;font-size:.74rem;color:var(--muted);line-height:1.6}
+.info strong{color:var(--text)}
+.info code{background:#f0eeec;padding:.1rem .3rem;border-radius:2px;font-size:.72rem}
+
+/* ── SLOTS DE IMAGEN ── */
+.img-slots{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+.img-slot-wrap{display:flex;flex-direction:column;gap:.35rem}
+.img-slot{
+  position:relative;border:2px dashed var(--border);border-radius:6px;
+  min-height:130px;cursor:pointer;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  transition:border-color .2s,background .2s;background:var(--bg);
+  user-select:none;
+}
+.img-slot:hover{border-color:var(--verde);background:var(--vl)}
+.img-slot.drag-over{border-color:var(--verde);background:var(--vl);border-style:solid}
+.img-slot.has-img{border-color:var(--verde);border-style:solid}
+.img-slot.uploading{border-color:var(--feria);border-style:solid}
+.img-slot.error{border-color:var(--danger);border-style:solid}
+
+.slot-inner{text-align:center;padding:.8rem;pointer-events:none}
+.slot-icon{font-size:1.6rem;line-height:1;margin-bottom:.3rem}
+.slot-label{font-size:.75rem;font-weight:500;color:var(--text);margin-bottom:.15rem}
+.slot-hint{font-size:.68rem;color:var(--muted)}
+
+.slot-preview{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;display:none;border-radius:4px;
+}
+.img-slot.has-img .slot-inner{display:none}
+.img-slot.has-img .slot-preview{display:block}
+
+.slot-clear{
+  display:none;position:absolute;top:5px;right:5px;z-index:2;
+  background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;
+  width:22px;height:22px;font-size:.7rem;cursor:pointer;
+  align-items:center;justify-content:center;line-height:1;
+  transition:background .15s;
+}
+.slot-clear:hover{background:rgba(180,60,60,.9)}
+.img-slot.has-img .slot-clear{display:flex}
+
+.slot-status{
+  display:none;position:absolute;bottom:0;left:0;right:0;
+  background:rgba(0,0,0,.62);color:#fff;font-size:.64rem;
+  padding:.2rem .45rem;text-align:center;line-height:1.3;
+}
+.slot-status.visible{display:block}
+
+/* URL manual debajo de cada slot */
+.slot-url-row{
+  display:flex;align-items:center;gap:.35rem;
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:4px;padding:.25rem .45rem;
+  transition:border-color .15s;
+}
+.slot-url-row:focus-within{border-color:var(--verde)}
+.slot-url-icon{font-size:.75rem;flex-shrink:0;line-height:1}
+.slot-url-input{
+  border:none;background:transparent;font-family:'Jost',sans-serif;
+  font-size:.74rem;color:var(--text);width:100%;outline:none;
+  min-width:0;
+}
+.slot-url-input::placeholder{color:#bbb}
+.slot-url-input.has-value{color:var(--bosque)}
+
+.slot-nota{font-size:.67rem;color:var(--muted);margin-top:.5rem;line-height:1.5}
+.slot-nota strong{color:var(--text);font-weight:500}
+
+@media(max-width:480px){.img-slots{grid-template-columns:1fr}}
+
+/* ── ACCIONES TD ── */
+.td-actions{display:flex;gap:.3rem;justify-content:flex-end}
+
+@media(max-width:600px){
+  input[type=number]{width:82px}
+  th,td{padding-left:.5rem;padding-right:.5rem}
+  .form-grid{grid-template-columns:1fr}
+  .form-grid .full{grid-column:1}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">Atrezos & Props — Admin</a>
+  <div class="nav-r">
+    <label class="btn btn-g" title="Importar productos.json existente">
+      ⬆ Importar
+      <input type="file" accept=".json" style="display:none" onchange="importarJSON(event)">
+    </label>
+    <button class="btn btn-o" onclick="exportarJSON()">⬇ Exportar JSON</button>
+    <button class="btn btn-p" onclick="guardarTodo()">💾 Guardar</button>
+  </div>
+</nav>
+
+<div class="config-strip">
+  <label>
+    <input type="checkbox" id="toggle-feria" onchange="toggleModoFeria(this.checked)">
+    <span id="feria-label">Modo Feria</span>
+  </label>
+  <div class="sep"></div>
+  <span>Los cambios se guardan en localStorage y se sincronizan en tiempo real con el catálogo.</span>
+</div>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="hdr">
+  <h1>Panel de Administración</h1>
+  <p>Editá productos, categorías y configuración. Los cambios se reflejan de inmediato en el catálogo abierto.</p>
+</div>
+
+<div id="paneles"></div>
+
+<div class="info">
+  <strong>Precio Normal:</strong> siempre visible. <strong>Precio Feria:</strong> resaltado cuando Modo Feria está activo.<br>
+  <strong>Precio Feria</strong> debe ser menor que <strong>Precio Normal</strong>. Stock 0 = agotado automáticamente. <code>Disponible</code> desmarcado = agotado.
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ══ MODAL PRODUCTO ══ -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal" id="modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem">
+      <h2 id="modal-titulo" style="margin-bottom:0">Nuevo producto</h2>
+      <button onclick="cerrarModal()" style="background:var(--bg);border:1px solid var(--border);border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:.9rem;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0" onmouseover="this.style.borderColor='var(--danger)';this.style.color='var(--danger)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'" title="Cerrar">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="full">
+        <label class="field-lbl">Nombre *</label>
+        <input type="text" class="field-input" id="f-nombre" placeholder="Ej. Remera básica">
+        <span class="field-err" id="err-nombre">Ingresá un nombre</span>
+      </div>
+      <div class="full">
+        <label class="field-lbl">Descripción</label>
+        <input type="text" class="field-input" id="f-desc" placeholder="Ej. 100% algodón, varios colores">
+      </div>
+      <div class="full">
+        <label class="field-lbl">Categoría *</label>
+        <select class="field-select" id="f-cat">
+          <option value="">— Elegí una categoría —</option>
+        </select>
+        <span class="field-err" id="err-cat">Seleccioná una categoría</span>
+      </div>
+      <div>
+        <label class="field-lbl">Precio Normal (Gs.)</label>
+        <input type="number" class="field-input" id="f-pnormal" placeholder="0" min="0" style="width:100%;text-align:left">
+        <span class="field-err" id="err-precio">El precio feria debe ser menor al normal</span>
+      </div>
+      <div>
+        <label class="field-lbl">Precio Feria (Gs.)</label>
+        <input type="number" class="field-input" id="f-pferia" placeholder="0" min="0" style="width:100%;text-align:left">
+      </div>
+      <div>
+        <label class="field-lbl">Stock inicial</label>
+        <input type="number" class="field-input" id="f-stock" placeholder="0" min="0" style="width:100%;text-align:left">
+      </div>
+      <div style="display:flex;align-items:center;gap:.5rem;padding-top:1.2rem">
+        <input type="checkbox" id="f-disp" checked style="accent-color:var(--verde);width:16px;height:16px;cursor:pointer">
+        <label for="f-disp" style="font-size:.82rem;cursor:pointer">Disponible</label>
+      </div>
+      <!-- ── ZONA DE IMÁGENES ── -->
+      <div class="full">
+        <label class="field-lbl" style="margin-bottom:.5rem">Imágenes del producto</label>
+        <div class="img-slots">
+
+          <!-- SLOT 1: Imagen principal -->
+          <div class="img-slot-wrap">
+            <div class="img-slot" id="slot-principal"
+                 onclick="document.getElementById('f-img-file').click()"
+                 ondragover="dragOver(event,'slot-principal')"
+                 ondragleave="dragLeave('slot-principal')"
+                 ondrop="soltarImagen(event,'principal')">
+              <input type="file" id="f-img-file" accept="image/*" style="display:none"
+                     onchange="previsualizarSlot(this,'principal')">
+              <div class="slot-inner" id="slot-principal-inner">
+                <div class="slot-icon">🖼</div>
+                <div class="slot-label">Imagen Principal</div>
+                <div class="slot-hint">Clic o arrastrá</div>
+              </div>
+              <img id="prev-principal" class="slot-preview" src="" alt="">
+              <button class="slot-clear" id="clear-principal" onclick="limpiarSlot(event,'principal')" title="Quitar imagen">✕</button>
+              <div class="slot-status" id="status-principal"></div>
+            </div>
+            <!-- URL manual: siempre visible, funciona sin ownCloud -->
+            <div class="slot-url-row">
+              <span class="slot-url-icon">🔗</span>
+              <input type="text" class="slot-url-input" id="f-img"
+                     placeholder="o pegá una URL directamente…"
+                     oninput="onUrlManualInput('principal', this.value)">
+            </div>
+          </div>
+
+          <!-- SLOT 2: Imagen muestra -->
+          <div class="img-slot-wrap">
+            <div class="img-slot" id="slot-muestra"
+                 onclick="document.getElementById('f-imgm-file').click()"
+                 ondragover="dragOver(event,'slot-muestra')"
+                 ondragleave="dragLeave('slot-muestra')"
+                 ondrop="soltarImagen(event,'muestra')">
+              <input type="file" id="f-imgm-file" accept="image/*" style="display:none"
+                     onchange="previsualizarSlot(this,'muestra')">
+              <div class="slot-inner" id="slot-muestra-inner">
+                <div class="slot-icon">🔍</div>
+                <div class="slot-label">Imagen Muestra</div>
+                <div class="slot-hint">Detalle · textura · hover</div>
+              </div>
+              <img id="prev-muestra" class="slot-preview" src="" alt="">
+              <button class="slot-clear" id="clear-muestra" onclick="limpiarSlot(event,'muestra')" title="Quitar imagen">✕</button>
+              <div class="slot-status" id="status-muestra"></div>
+            </div>
+            <!-- URL manual: siempre visible, funciona sin ownCloud -->
+            <div class="slot-url-row">
+              <span class="slot-url-icon">🔗</span>
+              <input type="text" class="slot-url-input" id="f-imgm"
+                     placeholder="o pegá una URL directamente…"
+                     oninput="onUrlManualInput('muestra', this.value)">
+            </div>
+          </div>
+
+        </div>
+        <p class="slot-nota">
+          <strong>Subir archivo:</strong> se optimiza a WebP y se guarda en la carpeta <code>imagenes/</code> automáticamente (requiere que el servidor esté corriendo con <code>node server.js</code>).
+          <strong>URL manual:</strong> funciona siempre, pegá cualquier URL de imagen de internet.
+          Si subís un archivo, su URL reemplaza la que hayas escrito.
+        </p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-g" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn btn-p" onclick="guardarProductoModal()">Guardar producto</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+//  ESTRUCTURA BASE
+// ══════════════════════════════════════════════════════════════════════════════
+const CATEGORIAS_BASE = [
+  {
+    id: 'ropa', nombre: 'Ropa',
+    descripcion: 'Seleccioná los que te interesan y consultanos por WhatsApp.',
+    productos: [
+      { id: 1, nombre: 'Remera básica',    descripcion: '100% algodón, varios colores', imagen: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=500&fit=crop', imagenMuestra: 'https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=400&h=500&fit=crop', disponible: true, stock: 10 },
+      { id: 2, nombre: 'Pantalón jogger',  descripcion: 'Cómodo y liviano, talle S al XL', imagen: 'https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=400&h=500&fit=crop', imagenMuestra: 'https://images.unsplash.com/photo-1552902865-b72c031ac5ea?w=400&h=500&fit=crop', disponible: true, stock: 5 },
+      { id: 3, nombre: 'Buzo con capucha', descripcion: 'Frizado interior, talle único',   imagen: 'https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=400&h=500&fit=crop', imagenMuestra: 'https://images.unsplash.com/photo-1509942774463-acf339cf87d5?w=400&h=500&fit=crop', disponible: false, stock: 0 },
+    ]
+  },
+  {
+    id: 'accesorios', nombre: 'Accesorios',
+    descripcion: 'Completá tu look con nuestros accesorios.',
+    productos: [
+      { id: 4, nombre: 'Gorra bordada',  descripcion: 'Ajustable, varios colores',        imagen: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&h=500&fit=crop', imagenMuestra: 'https://images.unsplash.com/photo-1521369909029-2afed882baee?w=400&h=500&fit=crop', disponible: true, stock: 8 },
+      { id: 5, nombre: 'Mochila urbana', descripcion: '15L, compartimento para notebook', imagen: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=500&fit=crop', imagenMuestra: 'https://images.unsplash.com/photo-1622560480605-d83c853bc5c3?w=400&h=500&fit=crop', disponible: true, stock: 3 },
+    ]
+  },
+];
+
+const CONFIG_BASE = {
+  nombreTienda: 'Atrezos & Props',
+  modoFeria: false,
+  whatsapp: '595981234567',
+  mensajeWhatsapp: 'Hola! Me interesa hacer un pedido:',
+  moneda: 'Gs.',
+  telefono: '0986 332140',
+};
+
+const SK = 'ap_productos_v2';
+
+// ── TABS dinámicas ─────────────────────────────────────────────────
+function getTabs() {
+  return [
+    ...estado.categorias.map(c => ({ key: c.id, label: c.nombre })),
+    { key: '__cats__',   label: '📂 Categorías' },
+    { key: '__config__', label: '⚙ Config' },
+  ];
+}
+
+// ── ESTADO ─────────────────────────────────────────────────────────
+let estado = null;
+let activa = null;
+let editandoId = null; // null = nuevo, número = editar
+
+function inicializarEstado() {
+  try {
+    const g = JSON.parse(localStorage.getItem(SK));
+    if (g && g.config && g.categorias) {
+      estado = g;
+      estado.config = { ...CONFIG_BASE, ...estado.config };
+      // Asegurar campo stock en todos los productos
+      estado.categorias.forEach(cat =>
+        cat.productos.forEach(p => { if (typeof p.stock === 'undefined') p.stock = p.disponible ? 999 : 0; })
+      );
+    } else { resetearEstado(); }
+  } catch { resetearEstado(); }
+
+  activa = estado.categorias.length > 0 ? estado.categorias[0].id : '__cats__';
+}
+
+function resetearEstado() {
+  estado = {
+    config: { ...CONFIG_BASE },
+    categorias: CATEGORIAS_BASE.map(cat => ({
+      ...cat,
+      productos: cat.productos.map(p => ({
+        ...p,
+        precioNormal: p.precioNormal || 0,
+        precioFeria:  p.precioFeria  || 0,
+        stock: typeof p.stock !== 'undefined' ? p.stock : 10,
+      }))
+    }))
+  };
+}
+
+// ── STORAGE & SINCRONIZACIÓN ───────────────────────────────────────
+function persistir() {
+  localStorage.setItem(SK, JSON.stringify(estado));
+}
+
+// ── RENDER TABS ────────────────────────────────────────────────────
+function renderTabs() {
+  const tabs = getTabs();
+  document.getElementById('tabs').innerHTML = tabs.map(t =>
+    `<button class="tab${t.key === activa ? ' active' : ''}" onclick="cambiarTab('${t.key}')">${t.label}</button>`
+  ).join('');
+}
+
+function cambiarTab(key) {
+  activa = key;
+  renderTabs();
+  document.querySelectorAll('.panel').forEach(el =>
+    el.classList.toggle('active', el.dataset.key === key)
+  );
+}
+
+// ── RENDER PANELES ─────────────────────────────────────────────────
+function renderPaneles() {
+  const wrap = document.getElementById('paneles');
+  wrap.innerHTML = '';
+
+  // Paneles por categoría
+  estado.categorias.forEach(cat => {
+    const panel = document.createElement('div');
+    panel.className = `panel${cat.id === activa ? ' active' : ''}`;
+    panel.dataset.key = cat.id;
+
+    const rows = cat.productos.map(p => `
+      <tr>
+        <td>
+          <div class="pn">${p.nombre}</div>
+          <div class="pid">#${p.id}</div>
+        </td>
+        <td>
+          <div class="disp-toggle">
+            <input type="checkbox" ${p.disponible !== false && p.disponible !== 0 ? 'checked' : ''}
+              onchange="cambiarDisponible('${cat.id}',${p.id},this.checked)">
+          </div>
+        </td>
+        <td>
+          <div class="pw">
+            <span class="gs">Gs.</span>
+            <input type="number" class="${(p.precioNormal||0)>0?'saved':''}"
+              data-cat="${cat.id}" data-id="${p.id}" data-campo="precioNormal"
+              value="${p.precioNormal||''}" placeholder="0" min="0"
+              oninput="cambiarPrecio('${cat.id}',${p.id},'precioNormal',this)">
+          </div>
+        </td>
+        <td>
+          <div class="pw">
+            <span class="gsf">Gs.</span>
+            <input type="number" class="feria ${(p.precioFeria||0)>0?'saved':''}"
+              data-cat="${cat.id}" data-id="${p.id}" data-campo="precioFeria"
+              value="${p.precioFeria||''}" placeholder="0" min="0"
+              oninput="cambiarPrecio('${cat.id}',${p.id},'precioFeria',this)">
+          </div>
+        </td>
+        <td>
+          <div class="pw">
+            <input type="number" class="stock-input ${typeof p.stock==='number'&&p.stock>0?'saved':''}"
+              data-cat="${cat.id}" data-id="${p.id}" data-campo="stock"
+              value="${typeof p.stock==='number'?p.stock:''}" placeholder="0" min="0"
+              oninput="cambiarStock('${cat.id}',${p.id},this)">
+          </div>
+        </td>
+        <td>
+          <div class="td-actions">
+            <button class="btn btn-g btn-sm" onclick="abrirEditar('${cat.id}',${p.id})">Editar</button>
+            <button class="btn btn-danger btn-sm" onclick="eliminarProducto('${cat.id}',${p.id})">✕</button>
+          </div>
+        </td>
+      </tr>`).join('');
+
+    panel.innerHTML = `
+      <div style="display:flex;justify-content:flex-end;margin-bottom:.6rem">
+        <button class="btn btn-p btn-sm" onclick="abrirNuevoProducto('${cat.id}')">+ Nuevo producto</button>
+      </div>
+      <div class="bloque open">
+        <div class="bloque-h" onclick="tog(this)">
+          <span class="bloque-t">${cat.nombre}</span>
+          <div class="bloque-m">
+            <span class="bloque-c">${cat.productos.length} productos</span>
+            <span class="chev">▼</span>
+          </div>
+        </div>
+        <div class="bloque-b">
+          <table>
+            <thead><tr>
+              <th>Producto</th>
+              <th style="text-align:center">Disponible</th>
+              <th class="r">Precio Normal</th>
+              <th class="fth">🏷 Precio Feria</th>
+              <th class="r">Stock</th>
+              <th class="r">Acciones</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
+    wrap.appendChild(panel);
+  });
+
+  // Panel Categorías
+  const panelCats = document.createElement('div');
+  panelCats.className = `panel${'__cats__' === activa ? ' active' : ''}`;
+  panelCats.dataset.key = '__cats__';
+  panelCats.innerHTML = `
+    <div class="config-form">
+      <h3>Gestión de Categorías</h3>
+      <p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem">
+        Editá nombre y descripción directamente. Para eliminar una categoría con productos, sus productos se moverán a la categoría que elijas.
+      </p>
+      <table class="cat-table" id="cat-tabla"></table>
+      <div class="cat-add">
+        <input type="text" id="nueva-cat-nombre" placeholder="Nombre de nueva categoría" onkeydown="if(event.key==='Enter')agregarCategoria()">
+        <input type="text" id="nueva-cat-desc" placeholder="Descripción (opcional)" style="flex:2" onkeydown="if(event.key==='Enter')agregarCategoria()">
+        <button class="btn btn-p btn-sm" onclick="agregarCategoria()">+ Agregar</button>
+      </div>
+    </div>`;
+  wrap.appendChild(panelCats);
+  renderCatTabla();
+
+  // Panel Config
+  const panelConfig = document.createElement('div');
+  panelConfig.className = `panel${'__config__' === activa ? ' active' : ''}`;
+  panelConfig.dataset.key = '__config__';
+  const c = estado.config;
+  panelConfig.innerHTML = `
+    <div class="config-form">
+      <h3>Configuración de la Tienda</h3>
+      <div class="config-grid">
+        <div class="field">
+          <label>Nombre de la tienda</label>
+          <input type="text" class="config-input" value="${c.nombreTienda||''}" oninput="cambiarConfig('nombreTienda',this.value)">
+        </div>
+        <div class="field">
+          <label>Teléfono visible</label>
+          <input type="text" class="config-input" value="${c.telefono||''}" oninput="cambiarConfig('telefono',this.value)">
+        </div>
+        <div class="field">
+          <label>WhatsApp (con código país)</label>
+          <input type="text" class="config-input" value="${c.whatsapp||''}" oninput="cambiarConfig('whatsapp',this.value)">
+        </div>
+        <div class="field">
+          <label>Moneda</label>
+          <input type="text" class="config-input" value="${c.moneda||'Gs.'}" oninput="cambiarConfig('moneda',this.value)">
+        </div>
+        <div class="field">
+          <label>Mensaje de WhatsApp</label>
+          <input type="text" class="config-input" value="${c.mensajeWhatsapp||''}" oninput="cambiarConfig('mensajeWhatsapp',this.value)">
+        </div>
+        <div class="field">
+          <label>Modo Feria</label>
+          <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.83rem;margin-top:.2rem">
+            <input type="checkbox" id="cfg-modoFeria" ${c.modoFeria?'checked':''} onchange="cambiarConfig('modoFeria',this.checked);sincronizarToggleFeria()" style="accent-color:var(--feria);width:16px;height:16px">
+            <span id="cfg-feria-lbl">${c.modoFeria?'🏷 Activado':'Desactivado'}</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="config-form" style="margin-top:.8rem">
+      <h3>📁 Imágenes — Servidor Local</h3>
+      <p style="font-size:.75rem;color:var(--muted);margin-bottom:1rem">
+        Las imágenes se guardan automáticamente en la carpeta <code>imagenes/</code> junto a tus archivos HTML cuando subís un archivo desde el admin.
+        Solo necesitás tener el servidor corriendo con <code>node server.js</code>.
+      </p>
+      <div style="background:#eef4eb;border:1px solid #c5dbbe;border-radius:4px;padding:.8rem 1rem;font-size:.78rem;color:var(--verde);margin-bottom:1rem">
+        <strong>Flujo automático:</strong> Subís imagen → WebP → sube a tu ownCloud → URL pública lista para el catálogo<br>
+        <span style="color:var(--muted);font-size:.73rem">La URL resultante tiene el formato: <code>https://cloud.atrezosprops.space/s/TOKEN/download</code></span>
+      </div>
+
+      <div class="config-grid">
+        <div class="field" style="grid-column:1/-1">
+          <label>URL WebDAV de ownCloud <span style="font-weight:300;text-transform:none">(incluye /remote.php/dav/files/USUARIO)</span></label>
+          <input type="text" class="config-input" style="width:100%"
+            value="${c.owncloudUrl||''}"
+            oninput="cambiarConfig('owncloudUrl',this.value)"
+            placeholder="https://cloud.atrezosprops.space/remote.php/dav/files/admin">
+        </div>
+        <div class="field">
+          <label>Usuario ownCloud</label>
+          <input type="text" class="config-input"
+            value="${c.owncloudUser||''}"
+            oninput="cambiarConfig('owncloudUser',this.value)"
+            placeholder="admin" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>Contraseña / App token</label>
+          <input type="password" class="config-input"
+            value="${c.owncloudPass||''}"
+            oninput="cambiarConfig('owncloudPass',this.value)"
+            autocomplete="new-password">
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label>Carpeta de imágenes en ownCloud <span style="font-weight:300;text-transform:none">(ej: /MiTienda/Imagenes/)</span></label>
+          <input type="text" class="config-input" style="width:100%"
+            value="${c.owncloudRutaBase||'/MiTienda/Imagenes/'}"
+            oninput="cambiarConfig('owncloudRutaBase',this.value)"
+            placeholder="/MiTienda/Imagenes/">
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:.6rem;margin-top:1rem;flex-wrap:wrap">
+        <button class="btn btn-o btn-sm" onclick="probarServidor(this)">🔌 Probar servidor</button>
+        <button class="btn btn-p btn-sm" onclick="probarConexionOwnCloud(this)">☁ Probar conexión ownCloud</button>
+        <span style="font-size:.72rem;color:var(--muted)">Guardá los cambios antes de probar.</span>
+      </div>
+      <div id="servidor-test-result" style="display:none;margin-top:.8rem;border:1px solid var(--border);border-radius:4px;overflow:hidden;font-size:.75rem"></div>
+    </div>`;
+  wrap.appendChild(panelConfig);
+
+  sincronizarToggleFeria();
+}
+
+// ── CATEGORÍAS ─────────────────────────────────────────────────────
+function renderCatTabla() {
+  const el = document.getElementById('cat-tabla');
+  if (!el) return;
+
+  if (estado.categorias.length === 0) {
+    el.innerHTML = '<tr><td style="padding:1.2rem;color:var(--muted);font-size:.82rem;font-style:italic">Sin categorías todavía</td></tr>';
+    return;
+  }
+
+  el.innerHTML = `
+    <thead><tr>
+      <th>Nombre</th>
+      <th>Descripción</th>
+      <th style="text-align:center">Productos</th>
+      <th style="text-align:right">Acciones</th>
+    </tr></thead>
+    <tbody>
+      ${estado.categorias.map(c => `
+        <tr>
+          <td style="min-width:160px">
+            <input class="cat-inline-input" value="${escHtml(c.nombre)}"
+              oninput="editarCatCampo('${c.id}','nombre',this.value)"
+              onblur="guardarTodo()" title="Editá el nombre">
+          </td>
+          <td style="min-width:220px">
+            <input class="cat-inline-input" value="${escHtml(c.descripcion||'')}"
+              oninput="editarCatCampo('${c.id}','descripcion',this.value)"
+              onblur="guardarTodo()" placeholder="Sin descripción">
+          </td>
+          <td style="text-align:center;font-size:.82rem;color:var(--muted)">${c.productos.length}</td>
+          <td style="text-align:right">
+            <button class="btn btn-danger btn-sm" onclick="eliminarCategoria('${c.id}')">✕ Eliminar</button>
+          </td>
+        </tr>`).join('')}
+    </tbody>`;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function editarCatCampo(id, campo, valor) {
+  const cat = estado.categorias.find(c => c.id === id);
+  if (cat) cat[campo] = valor;
+  // Reflejar cambio de nombre en tabs en tiempo real
+  if (campo === 'nombre') renderTabs();
+}
+
+function agregarCategoria() {
+  const nombre = document.getElementById('nueva-cat-nombre').value.trim();
+  if (!nombre) { toast('Ingresá un nombre para la categoría'); return; }
+  const desc = document.getElementById('nueva-cat-desc').value.trim();
+  const base = nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
+  const id = base + '_' + Date.now();
+  estado.categorias.push({ id, nombre, descripcion: desc || '', productos: [] });
+  document.getElementById('nueva-cat-nombre').value = '';
+  document.getElementById('nueva-cat-desc').value = '';
+  guardarTodo();
+  activa = '__cats__';
+  renderTabs();
+  renderPaneles();
+  cambiarTab('__cats__');
+  toast(`Categoría "${nombre}" creada`);
+}
+
+function eliminarCategoria(id) {
+  const cat = estado.categorias.find(c => c.id === id);
+  if (!cat) return;
+
+  if (cat.productos.length > 0) {
+    // Ofrecer mover productos a otra categoría
+    const otras = estado.categorias.filter(c => c.id !== id);
+    if (otras.length === 0) {
+      toast('No podés eliminar la única categoría que tiene productos.', 'err');
+      return;
+    }
+    const opciones = otras.map((c, i) => `${i + 1}. ${c.nombre} (${c.productos.length} prod.)`).join('\n');
+    const resp = prompt(
+      `"${cat.nombre}" tiene ${cat.productos.length} producto(s).\n\n` +
+      `¿A qué categoría querés moverlos?\n\n${opciones}\n\nEscribí el número:`
+    );
+    if (resp === null) return;
+    const idx = parseInt(resp) - 1;
+    if (isNaN(idx) || idx < 0 || idx >= otras.length) {
+      toast('Número inválido, operación cancelada.', 'err');
+      return;
+    }
+    const destino = otras[idx];
+    destino.productos.push(...cat.productos);
+    toast(`${cat.productos.length} producto(s) movido(s) a "${destino.nombre}"`);
+  } else {
+    if (!confirm(`¿Eliminar la categoría vacía "${cat.nombre}"?`)) return;
+  }
+
+  estado.categorias = estado.categorias.filter(c => c.id !== id);
+  if (activa === id) activa = estado.categorias.length > 0 ? estado.categorias[0].id : '__cats__';
+  guardarTodo();
+  renderTabs();
+  renderPaneles();
+  cambiarTab('__cats__');
+  toast(`Categoría "${cat.nombre}" eliminada`);
+}
+
+// ── MODAL PRODUCTO ─────────────────────────────────────────────────
+function poblarSelectCats(preselect = '') {
+  const sel = document.getElementById('f-cat');
+  sel.innerHTML = '<option value="">— Elegí una categoría —</option>' +
+    estado.categorias.map(c =>
+      `<option value="${c.id}" ${c.id === preselect ? 'selected' : ''}>${c.nombre}</option>`
+    ).join('');
+}
+
+function limpiarModal() {
+  ['f-nombre','f-desc'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-pnormal').value = '';
+  document.getElementById('f-pferia').value  = '';
+  document.getElementById('f-stock').value   = '';
+  document.getElementById('f-disp').checked  = true;
+  ['err-nombre','err-cat','err-precio'].forEach(id => { document.getElementById(id).style.display = 'none'; });
+  ['f-pnormal','f-pferia'].forEach(id => { document.getElementById(id).classList.remove('error'); });
+  // Limpiar ambos slots (incluye input de URL visible)
+  ['principal','muestra'].forEach(tipo => limpiarSlot({ stopPropagation:()=>{} }, tipo));
+}
+
+function abrirNuevoProducto(catId = '') {
+  editandoId = null;
+  limpiarModal();
+  poblarSelectCats(catId);
+  document.getElementById('modal-titulo').textContent = 'Nuevo producto';
+  document.getElementById('modal-bg').classList.add('open');
+}
+
+function abrirEditar(catId, prodId) {
+  const cat = estado.categorias.find(c => c.id === catId);
+  const p = cat ? cat.productos.find(p => p.id === prodId) : null;
+  if (!p) return;
+  editandoId = { catId, prodId };
+  limpiarModal();
+  poblarSelectCats(catId);
+  document.getElementById('modal-titulo').textContent = `Editar: ${p.nombre}`;
+  document.getElementById('f-nombre').value  = p.nombre      || '';
+  document.getElementById('f-desc').value    = p.descripcion || '';
+  document.getElementById('f-pnormal').value = p.precioNormal || p.precio || 0;
+  document.getElementById('f-pferia').value  = p.precioFeria  || 0;
+  document.getElementById('f-stock').value   = typeof p.stock === 'number' ? p.stock : '';
+  document.getElementById('f-disp').checked  = p.disponible !== false && p.disponible !== 0;
+  // Restaurar previsualizaciones desde URL guardada
+  restaurarSlotDesdeUrl('principal', p.imagen        || '');
+  restaurarSlotDesdeUrl('muestra',   p.imagenMuestra || '');
+  document.getElementById('modal-bg').classList.add('open');
+}
+
+function formularioSucio() {
+  const campos = ['f-nombre','f-desc','f-img','f-imgm'];
+  if (campos.some(id => document.getElementById(id)?.value.trim() !== '')) return true;
+  const nums = ['f-pnormal','f-pferia','f-stock'];
+  if (nums.some(id => document.getElementById(id).value !== '')) return true;
+  if (document.getElementById('f-cat').value !== '') return true;
+  if (document.getElementById('f-img-file').files?.length)  return true;
+  if (document.getElementById('f-imgm-file').files?.length) return true;
+  return false;
+}
+
+function cerrarModal() {
+  if (formularioSucio()) {
+    if (!confirm('¿Seguro que querés salir? Perderás los cambios no guardados.')) return;
+  }
+  document.getElementById('modal-bg').classList.remove('open');
+}
+
+async function guardarProductoModal() {
+  // Leer valores
+  const nombre   = document.getElementById('f-nombre').value.trim();
+  const catId    = document.getElementById('f-cat').value;
+  const pNormal  = parseInt(document.getElementById('f-pnormal').value) || 0;
+  const pFeria   = parseInt(document.getElementById('f-pferia').value)  || 0;
+  const stock    = parseInt(document.getElementById('f-stock').value);
+  const disp     = document.getElementById('f-disp').checked;
+  const desc     = document.getElementById('f-desc').value.trim();
+
+  // Validaciones
+  let valido = true;
+
+  if (!nombre) {
+    document.getElementById('err-nombre').style.display = 'block';
+    document.getElementById('f-nombre').focus();
+    valido = false;
+  } else {
+    document.getElementById('err-nombre').style.display = 'none';
+  }
+
+  if (!catId) {
+    document.getElementById('err-cat').style.display = 'block';
+    valido = false;
+  } else {
+    document.getElementById('err-cat').style.display = 'none';
+  }
+
+  // Regla de negocio: precio feria debe ser MENOR que precio normal (si ambos > 0)
+  if (pNormal > 0 && pFeria > 0 && pFeria >= pNormal) {
+    document.getElementById('err-precio').style.display = 'block';
+    document.getElementById('f-pferia').classList.add('error');
+    document.getElementById('f-pnormal').classList.add('error');
+    valido = false;
+  } else {
+    document.getElementById('err-precio').style.display = 'none';
+    document.getElementById('f-pferia').classList.remove('error');
+    document.getElementById('f-pnormal').classList.remove('error');
+  }
+
+  if (!valido) return;
+
+  // ── Subir ambas imágenes en paralelo (solo las que tienen archivo nuevo)
+  const { urlPrincipal, urlMuestra } = await subirAmbosSlots(nombre, catId);
+  const img  = urlPrincipal || '';
+  const imgm = urlMuestra   || '';
+
+  const cat = estado.categorias.find(c => c.id === catId);
+  if (!cat) return;
+
+  if (editandoId) {
+    // EDITAR existente
+    const { catId: catOrigId, prodId } = editandoId;
+    const catOrig = estado.categorias.find(c => c.id === catOrigId);
+    const idx = catOrig.productos.findIndex(p => p.id === prodId);
+    if (idx === -1) return;
+
+    const prod = { ...catOrig.productos[idx], nombre, descripcion: desc,
+      precioNormal: pNormal, precio: pNormal, precioFeria: pFeria,
+      stock: isNaN(stock) ? catOrig.productos[idx].stock : stock,
+      disponible: disp, imagen: img, imagenMuestra: imgm };
+
+    // Mover de categoría si cambió
+    if (catId !== catOrigId) {
+      catOrig.productos.splice(idx, 1);
+      cat.productos.push(prod);
+    } else {
+      catOrig.productos[idx] = prod;
+    }
+    toast(`"${nombre}" actualizado`);
+  } else {
+    // NUEVO producto
+    const newId = Date.now();
+    cat.productos.push({
+      id: newId, nombre, descripcion: desc,
+      precioNormal: pNormal, precio: pNormal, precioFeria: pFeria,
+      stock: isNaN(stock) ? 0 : stock,
+      disponible: disp, imagen: img, imagenMuestra: imgm
+    });
+    toast(`"${nombre}" agregado a ${cat.nombre}`);
+  }
+
+  document.getElementById('modal-bg').classList.remove('open');
+  guardarTodo();
+  activa = catId;
+  renderTabs();
+  renderPaneles();
+  cambiarTab(catId);
+}
+
+function eliminarProducto(catId, prodId) {
+  const cat = estado.categorias.find(c => c.id === catId);
+  if (!cat) return;
+  const p = cat.productos.find(p => p.id === prodId);
+  if (!p) return;
+  if (!confirm(`¿Eliminar "${p.nombre}"?`)) return;
+  cat.productos = cat.productos.filter(p => p.id !== prodId);
+  guardarTodo();
+  renderPaneles();
+  toast(`"${p.nombre}" eliminado`);
+}
+
+// ── MUTACIONES INLINE ──────────────────────────────────────────────
+function getCat(catId) { return estado.categorias.find(c => c.id === catId); }
+function getProd(catId, prodId) { const c = getCat(catId); return c ? c.productos.find(p => p.id === prodId) : null; }
+
+function cambiarPrecio(catId, prodId, campo, input) {
+  const p = getProd(catId, prodId); if (!p) return;
+  const val = parseInt(input.value) || 0;
+  p[campo] = val;
+  if (campo === 'precioNormal') p.precio = val;
+  input.classList.add('changed'); input.classList.remove('saved');
+}
+
+function cambiarStock(catId, prodId, input) {
+  const p = getProd(catId, prodId); if (!p) return;
+  const val = parseInt(input.value);
+  p.stock = isNaN(val) ? 0 : val;
+  // Sincronizar disponible según stock
+  if (!isNaN(val)) p.disponible = val > 0;
+  input.classList.add('changed'); input.classList.remove('saved');
+}
+
+function cambiarDisponible(catId, prodId, checked) {
+  const p = getProd(catId, prodId); if (!p) return;
+  p.disponible = checked;
+  if (!checked) p.stock = 0;
+}
+
+function cambiarConfig(campo, valor) {
+  estado.config[campo] = valor;
+  if (campo === 'modoFeria') sincronizarToggleFeria();
+  // Actualizar preview de ruta en tiempo real
+  if (['owncloudRutaBase'].includes(campo)) {
+    const el = document.getElementById('ruta-preview');
+    if (el) el.textContent = construirRutaEjemplo(estado.config);
+  }
+}
+
+function construirRutaEjemplo(cfg) {
+  const base = (cfg.owncloudRutaBase || '/MiTienda/Imagenes/').replace(/\/?$/, '/');
+  return base + '[categoria]/nombre-producto.webp';
+}
+
+function sincronizarToggleFeria() {
+  const mf = estado.config.modoFeria;
+  const topToggle = document.getElementById('toggle-feria');
+  const topLabel  = document.getElementById('feria-label');
+  const cfgCheck  = document.getElementById('cfg-modoFeria');
+  const cfgLbl    = document.getElementById('cfg-feria-lbl');
+  if (topToggle) topToggle.checked = mf;
+  if (topLabel) { topLabel.textContent = mf ? '🏷 Modo Feria ACTIVO' : 'Modo Feria'; topLabel.className = mf ? 'modo-feria-on' : ''; }
+  if (cfgCheck) cfgCheck.checked = mf;
+  if (cfgLbl) cfgLbl.textContent = mf ? '🏷 Activado' : 'Desactivado';
+}
+
+function toggleModoFeria(checked) {
+  estado.config.modoFeria = checked;
+  sincronizarToggleFeria();
+  guardarTodo();
+}
+
+function tog(h) { h.parentElement.classList.toggle('open'); }
+
+// ── GUARDAR TODO ───────────────────────────────────────────────────
+function guardarTodo() {
+  // Leer todos los inputs numéricos para asegurar valores al día
+  document.querySelectorAll('input[data-campo]').forEach(inp => {
+    const catId  = inp.dataset.cat;
+    const prodId = parseInt(inp.dataset.id);
+    const campo  = inp.dataset.campo;
+    const val    = parseInt(inp.value) || 0;
+    const p = getProd(catId, prodId);
+    if (!p) return;
+    if (campo === 'stock') {
+      p.stock = val;
+      p.disponible = val > 0;
+    } else {
+      p[campo] = val;
+      if (campo === 'precioNormal') p.precio = val;
+    }
+    inp.classList.remove('changed');
+    inp.classList.toggle('saved', val > 0);
+  });
+
+  persistir();
+  // También guardar en productos.json para que index.html lo cargue
+  guardarEnServidor().catch(() => {});
+  toast('Guardado ✓');
+}
+
+async function guardarEnServidor() {
+  const exportData = {
+    config: { ...estado.config },
+    categorias: estado.categorias.map(cat => ({
+      id: cat.id, nombre: cat.nombre, descripcion: cat.descripcion || '',
+      productos: cat.productos.map(p => ({
+        id: p.id, nombre: p.nombre, descripcion: p.descripcion || '',
+        precio: p.precioNormal || 0,
+        precioNormal: p.precioNormal || 0,
+        precioFeria:  p.precioFeria  || 0,
+        stock: typeof p.stock === 'number' ? p.stock : 0,
+        imagen: p.imagen || '', imagenMuestra: p.imagenMuestra || '',
+        disponible: p.disponible !== false && p.disponible !== 0,
+      }))
+    }))
+  };
+  try {
+    await fetch('/api/guardar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(exportData)
+    });
+  } catch(e) {
+    // Silencioso si no hay servidor corriendo
+  }
+}
+
+// Guardar al pulsar Enter en cualquier input de tabla
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.dataset?.campo) { guardarTodo(); e.target.blur(); }
+});
+
+// ── IMPORT / EXPORT ────────────────────────────────────────────────
+function importarJSON(ev) {
+  const file = ev.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = e => {
+    try {
+      const d = JSON.parse(e.target.result);
+      if (d.categorias && d.config) {
+        estado = {
+          config: { ...CONFIG_BASE, ...d.config },
+          categorias: d.categorias.map(cat => ({
+            ...cat,
+            productos: cat.productos.map(p => ({
+              ...p,
+              precioNormal: p.precioNormal || p.precio || 0,
+              precioFeria:  p.precioFeria  || 0,
+              stock: typeof p.stock === 'number' ? p.stock : (p.disponible ? 10 : 0),
+            }))
+          }))
+        };
+        activa = estado.categorias.length > 0 ? estado.categorias[0].id : '__cats__';
+        persistir();
+        renderTabs();
+        renderPaneles();
+        toast('Importado ✓');
+        return;
+      }
+      if (d.normal || d.feria) {
+        const normal = d.normal || {}, feria = d.feria || {};
+        estado.categorias.forEach(cat => cat.productos.forEach(p => {
+          const k1 = cat.id + '_' + p.id, k2 = String(p.id);
+          p.precioNormal = normal[k1] || normal[k2] || p.precioNormal || 0;
+          p.precioFeria  = feria[k1]  || feria[k2]  || p.precioFeria  || 0;
+        }));
+        persistir(); renderTabs(); renderPaneles();
+        toast('Importado (formato viejo) ✓'); return;
+      }
+      toast('Formato no reconocido', 'err');
+    } catch(err) { toast('Error: ' + err.message, 'err'); }
+  };
+  r.readAsText(file);
+  ev.target.value = '';
+}
+
+function exportarJSON() {
+  guardarTodo();
+  const exportData = {
+    config: { ...estado.config },
+    categorias: estado.categorias.map(cat => ({
+      id: cat.id, nombre: cat.nombre, descripcion: cat.descripcion || '',
+      productos: cat.productos.map(p => ({
+        id: p.id, nombre: p.nombre, descripcion: p.descripcion || '',
+        precio: p.precioNormal || 0,
+        precioNormal: p.precioNormal || 0,
+        precioFeria:  p.precioFeria  || 0,
+        stock: typeof p.stock === 'number' ? p.stock : 0,
+        imagen: p.imagen || '', imagenMuestra: p.imagenMuestra || '',
+        disponible: p.disponible !== false && p.disponible !== 0,
+      }))
+    }))
+  };
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'productos.json' });
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('productos.json descargado — reemplazá el archivo junto a index.html', 'feria');
+}
+
+function toast(msg, tipo = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (tipo === 'feria' ? ' feria-toast' : tipo === 'err' ? ' err-toast' : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── IMÁGENES — SLOTS DUAL ──────────────────────────────────────────
+//
+// PRIORIDAD al guardar (por slot):
+//   1. URL devuelta por upload.php (si subida exitosa)
+//   2. URL escrita manualmente en el input de texto visible
+//   3. Cadena vacía
+//
+// Esto garantiza que los campos NUNCA queden vacíos por culpa de
+// upload.php no disponible, credenciales incorrectas o pruebas locales.
+
+const SLOT_CFG = {
+  principal: { fileId:'f-img-file',  prevId:'prev-principal', slotId:'slot-principal',
+               statusId:'status-principal', urlInputId:'f-img',  sufijo:'principal' },
+  muestra:   { fileId:'f-imgm-file', prevId:'prev-muestra',   slotId:'slot-muestra',
+               statusId:'status-muestra',   urlInputId:'f-imgm', sufijo:'muestra'   },
+};
+
+function previsualizarSlot(input, tipo) {
+  const cfg  = SLOT_CFG[tipo];
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById(cfg.prevId).src = e.target.result;
+    document.getElementById(cfg.slotId).classList.add('has-img');
+    setSlotStatus(tipo, '');
+    // Limpiar URL manual al elegir archivo (la URL de ownCloud la reemplazará)
+    marcarUrlInput(cfg.urlInputId, '');
+  };
+  reader.readAsDataURL(file);
+}
+
+// El usuario escribe directamente en el input de URL
+function onUrlManualInput(tipo, valor) {
+  const cfg = SLOT_CFG[tipo];
+  marcarUrlInput(cfg.urlInputId, valor);
+  if (valor.trim().startsWith('http')) {
+    document.getElementById(cfg.prevId).src = valor.trim();
+    document.getElementById(cfg.slotId).classList.add('has-img');
+    document.getElementById(cfg.fileId).value = ''; // no subir archivo si hay URL manual
+  } else if (!valor.trim()) {
+    document.getElementById(cfg.prevId).src = '';
+    document.getElementById(cfg.slotId).classList.remove('has-img');
+  }
+}
+
+function marcarUrlInput(inputId, valor) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  el.value = valor;
+  el.classList.toggle('has-value', valor.trim() !== '');
+}
+
+function dragOver(event, slotId) {
+  event.preventDefault();
+  document.getElementById(slotId).classList.add('drag-over');
+}
+function dragLeave(slotId) {
+  document.getElementById(slotId).classList.remove('drag-over');
+}
+
+function soltarImagen(event, tipo) {
+  event.preventDefault();
+  event.stopPropagation();
+  const cfg = SLOT_CFG[tipo];
+  document.getElementById(cfg.slotId).classList.remove('drag-over');
+  const file = event.dataTransfer.files[0];
+  if (!file || !file.type.startsWith('image/')) {
+    toast('Solo se aceptan archivos de imagen', 'err'); return;
+  }
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  const input = document.getElementById(cfg.fileId);
+  input.files = dt.files;
+  previsualizarSlot(input, tipo);
+}
+
+function limpiarSlot(event, tipo) {
+  event.stopPropagation();
+  const cfg = SLOT_CFG[tipo];
+  document.getElementById(cfg.fileId).value = '';
+  document.getElementById(cfg.prevId).src   = '';
+  document.getElementById(cfg.slotId).classList.remove('has-img','uploading','error');
+  setSlotStatus(tipo, '');
+  marcarUrlInput(cfg.urlInputId, '');
+}
+
+function setSlotStatus(tipo, msg, claseSlot = '') {
+  const cfg  = SLOT_CFG[tipo];
+  const slot = document.getElementById(cfg.slotId);
+  const el   = document.getElementById(cfg.statusId);
+  slot.classList.remove('uploading','error');
+  if (claseSlot) slot.classList.add(claseSlot);
+  if (msg) { el.textContent = msg; el.classList.add('visible'); }
+  else     { el.textContent = '';  el.classList.remove('visible'); }
+}
+
+// Restaurar slot al editar un producto existente
+function restaurarSlotDesdeUrl(tipo, url) {
+  if (!url) return;
+  const cfg = SLOT_CFG[tipo];
+  document.getElementById(cfg.prevId).src = url;
+  document.getElementById(cfg.slotId).classList.add('has-img');
+  marcarUrlInput(cfg.urlInputId, url); // visible y editable en el input de texto
+}
+
+// Lee la URL final que debe guardarse para este slot
+function leerUrlFinal(tipo) {
+  const cfg = SLOT_CFG[tipo];
+  const el  = document.getElementById(cfg.urlInputId);
+  return el ? el.value.trim() : '';
+}
+
+// Sube UN slot. Devuelve la URL final que debe guardarse en el producto.
+async function subirSlot(tipo, nombreProducto, catNombre) {
+  const cfg   = SLOT_CFG[tipo];
+  const input = document.getElementById(cfg.fileId);
+
+  // Sin archivo nuevo → usar URL manual (o la ya restaurada al editar)
+  if (!input.files || !input.files[0]) {
+    return leerUrlFinal(tipo);
+  }
+
+  // Hay archivo → intentar subir a ownCloud
+  setSlotStatus(tipo, '⏳ Optimizando y subiendo…', 'uploading');
+
+  const fd = new FormData();
+  fd.append('imagen',             input.files[0]);
+  fd.append('categoria',          catNombre);
+  fd.append('nombre',             nombreProducto);
+  fd.append('sufijo',             cfg.sufijo);
+  fd.append('config',             JSON.stringify(estado.config));
+  fd.append('owncloudLocalPath',  estado.config.owncloudLocalPath || '');
+  fd.append('owncloudRutaBase',   estado.config.owncloudRutaBase  || 'MiTienda/Imagenes');
+
+  try {
+    const res  = await fetch('/api/upload', { method: 'POST', body: fd });
+    const data = await res.json();
+
+    if (data.ok) {
+      // Éxito: imagen guardada localmente (y opcionalmente en ownCloud)
+      const ocInfo = data.owncloudGuardado
+        ? ' + ownCloud ☁'
+        : (estado.config.owncloudLocalPath ? ' (ownCloud: ' + (data.aviso || 'no copiado') + ')' : '');
+      setSlotStatus(tipo, '✓ Guardado como WebP' + ocInfo, '');
+      marcarUrlInput(cfg.urlInputId, data.url);
+      return data.url;
+
+    } else if (data.subidaOk) {
+      // Archivo subido a ownCloud PERO no se pudo crear el share público
+      // → mostrar error accionable, preservar URL manual si hay
+      setSlotStatus(tipo,
+        `⚠ Archivo en ownCloud (${data.ruta}) pero sin URL pública. ` +
+        `Creá el share manualmente en ownCloud y pegá la URL /s/TOKEN/download en el campo 🔗.`,
+        'error'
+      );
+      toast(`Imagen ${tipo}: subida ok pero sin share público. Revisá ownCloud → Archivos compartidos.`, 'err');
+      return leerUrlFinal(tipo); // conservar URL manual si existe
+
+    } else {
+      // Error de subida genérico
+      setSlotStatus(tipo, '✗ ' + (data.error || 'Error desconocido'), 'error');
+      toast(`Imagen ${tipo}: ${data.error}`, 'err');
+      return leerUrlFinal(tipo);
+    }
+
+  } catch(e) {
+    setSlotStatus(tipo, '✗ El servidor no responde. ¿Está corriendo "node server.js"?', 'error');
+    toast('No se pudo contactar el servidor. La URL manual se guardará si existe.', 'err');
+    return leerUrlFinal(tipo);
+  }
+}
+
+// Subir ambos slots en paralelo
+async function subirAmbosSlots(nombreProducto, catId) {
+  const cat       = estado.categorias.find(c => c.id === catId);
+  const catNombre = cat ? cat.nombre : catId;
+  const [urlPrincipal, urlMuestra] = await Promise.all([
+    subirSlot('principal', nombreProducto, catNombre),
+    subirSlot('muestra',   nombreProducto, catNombre),
+  ]);
+  return { urlPrincipal, urlMuestra };
+}
+
+  async function probarOwnCloudLocal(btn) {
+    const el = document.getElementById('servidor-test-result');
+    if (!el) return;
+    btn.disabled = true; btn.textContent = '⏳ Verificando…';
+    el.style.display = 'block';
+    const localPath = estado.config.owncloudLocalPath || '';
+    const rutaBase  = estado.config.owncloudRutaBase  || 'MiTienda/Imagenes';
+    if (!localPath) {
+      el.innerHTML = '<div style="padding:.7rem 1rem;background:#fff4ee;color:#a05010;font-size:.78rem">⚠ Primero ingresá la ruta a tu carpeta local de ownCloud en el campo de arriba y guardá los cambios.</div>';
+      btn.disabled = false; btn.textContent = '☁ Probar carpeta ownCloud';
+      return;
+    }
+    try {
+      const res  = await fetch('/api/probar-owncloud', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ owncloudLocalPath: localPath, owncloudRutaBase: rutaBase })
+      });
+      const data = await res.json();
+      const pasos = data.pasos || [];
+      const htmlPasos = pasos.map(p => `
+        <div style="display:flex;gap:.65rem;align-items:flex-start;padding:.5rem 1rem;border-bottom:1px solid #f0eeec">
+          <span style="flex-shrink:0;font-size:.95rem;margin-top:.05rem">${p.ok ? '✅' : '❌'}</span>
+          <div>
+            <div style="font-weight:500;font-size:.78rem;color:${p.ok?'var(--verde)':'var(--danger)'};margin-bottom:.15rem">${p.nombre}</div>
+            <div style="color:var(--muted);font-size:.72rem;line-height:1.5">${p.detalle}</div>
+          </div>
+        </div>`).join('');
+      const resumen = data.ok
+        ? '<div style="padding:.7rem 1rem;background:#eef4eb;color:var(--verde);font-size:.78rem;border-bottom:1px solid #d4e6d0"><strong>✅ Listo.</strong> Las imágenes se copiarán a tu carpeta de ownCloud automáticamente al subir.</div>'
+        : '<div style="padding:.7rem 1rem;background:#fdecea;color:var(--danger);font-size:.78rem;border-bottom:1px solid #f0d0ce"><strong>❌ Hay un problema con la ruta configurada.</strong> Verificá los pasos abajo.</div>';
+      el.innerHTML = resumen + htmlPasos;
+    } catch(e) {
+      el.innerHTML = '<div style="padding:.7rem 1rem;background:#fdecea;color:var(--danger);font-size:.78rem">❌ No se pudo conectar con el servidor. ¿Está corriendo "node server.js"?</div>';
+    }
+    btn.disabled = false; btn.textContent = '☁ Probar carpeta ownCloud';
+  }
+
+  async function probarServidor(btn) {
+    const el = document.getElementById('servidor-test-result');
+    if (!el) return;
+    btn.disabled = true; btn.textContent = '⏳ Probando…';
+    el.style.display = 'block';
+    el.innerHTML = '<div style="padding:.7rem 1rem;color:var(--muted);font-size:.76rem">Verificando servidor…</div>';
+    try {
+      const res = await fetch('/api/productos');
+      if (res.ok) {
+        el.innerHTML = `<div style="padding:.7rem 1rem;background:#eef4eb;color:var(--verde);font-size:.78rem">✅ Servidor corriendo correctamente en http://localhost:3000</div>`;
+      } else {
+        throw new Error('HTTP ' + res.status);
+      }
+    } catch(e) {
+      el.innerHTML = `<div style="padding:.7rem 1rem;background:#fdecea;color:var(--danger);font-size:.78rem">❌ Servidor no responde. Abrí una terminal en la carpeta del proyecto y ejecutá: <code>node server.js</code></div>`;
+    }
+    btn.disabled = false; btn.textContent = '🔌 Probar servidor';
+  }
+
+  async function probarConexionOwnCloud(btn) {
+    const resultEl = document.getElementById('servidor-test-result');
+    if (!resultEl) return;
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Probando…';
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = `
+      <div style="padding:.7rem 1rem;color:var(--muted);font-size:.76rem;display:flex;align-items:center;gap:.5rem">
+        <span style="display:inline-block;width:14px;height:14px;border:2px solid var(--verde);border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0"></span>
+        Probando conexión con ownCloud…
+      </div>
+      <style>@keyframes spin{to{transform:rotate(360deg)}}</style>`;
+
+    try {
+      const res  = await fetch('/api/probar-owncloud', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          owncloudUrl:      estado.config.owncloudUrl      || '',
+          owncloudUser:     estado.config.owncloudUser     || '',
+          owncloudPass:     estado.config.owncloudPass     || '',
+          owncloudRutaBase: estado.config.owncloudRutaBase || '/MiTienda/Imagenes/',
+        })
+      });
+      const data = await res.json();
+
+      const pasos = data.pasos || [];
+
+      // ── Renderizar pasos ────────────────────────────────────────
+      const htmlPasos = pasos.map(p => `
+        <div style="display:flex;gap:.65rem;align-items:flex-start;padding:.5rem 1rem;border-bottom:1px solid #f0eeec">
+          <span style="flex-shrink:0;font-size:.95rem;margin-top:.05rem">${p.ok ? '✅' : '❌'}</span>
+          <div style="min-width:0;flex:1">
+            <div style="font-weight:500;font-size:.78rem;color:${p.ok ? 'var(--verde)' : 'var(--danger)'};margin-bottom:.2rem">${p.nombre}</div>
+            <div style="color:var(--muted);font-size:.72rem;line-height:1.5;word-break:break-all">${p.detalle}</div>
+          </div>
+        </div>`).join('');
+
+      // ── Resumen superior ────────────────────────────────────────
+      let resumen = '';
+      if (data.ok) {
+        resumen = `<div style="padding:.7rem 1rem;background:#eef4eb;color:var(--verde);font-weight:500;font-size:.78rem;display:flex;align-items:center;gap:.5rem;border-bottom:1px solid #d4e6d0">
+          <span>✅</span> Todo funciona correctamente. Las imágenes subidas a ownCloud se mostrarán en el catálogo.
+        </div>`;
+      } else {
+        const primerError = pasos.find(p => !p.ok);
+        resumen = `<div style="padding:.7rem 1rem;background:#fdecea;color:var(--danger);font-weight:500;font-size:.78rem;display:flex;align-items:flex-start;gap:.5rem;border-bottom:1px solid #f0d0ce">
+          <span style="flex-shrink:0">❌</span>
+          <div>Hay un error en la configuración.${primerError ? `<br><span style="font-weight:400">${primerError.detalle}</span>` : ''}</div>
+        </div>`;
+      }
+
+      // ── URL de prueba con /download (si existe) ──────────────────
+      let htmlUrl = '';
+      if (data.urlPrueba) {
+        const esHttps = data.urlPrueba.startsWith('https://');
+        htmlUrl = `
+          <div style="padding:.6rem 1rem;background:#f8f7f5;border-bottom:1px solid #f0eeec;font-size:.73rem">
+            <div style="color:var(--muted);margin-bottom:.3rem;font-weight:500">🔗 URL de prueba generada <span style="font-weight:400;color:#aaa">(incluye <code style="background:#eee;padding:.05rem .25rem;border-radius:2px">/download</code>)</span></div>
+            <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap">
+              <a href="${data.urlPrueba}" target="_blank" rel="noopener"
+                 style="color:var(--verde);word-break:break-all;flex:1;min-width:0;font-family:monospace;font-size:.7rem">${data.urlPrueba}</a>
+              <button onclick="navigator.clipboard.writeText('${data.urlPrueba}').then(()=>toast('URL copiada ✓'))"
+                      class="btn btn-g btn-sm" style="flex-shrink:0">📋 Copiar</button>
+              <a href="${data.urlPrueba}" target="_blank" rel="noopener"
+                 class="btn btn-o btn-sm" style="flex-shrink:0;text-decoration:none">↗ Abrir</a>
+            </div>
+            ${!esHttps ? `<div style="color:#c8956a;margin-top:.35rem;font-size:.68rem">⚠ La URL usa HTTP (no HTTPS). Los navegadores modernos pueden bloquear imágenes HTTP en páginas HTTPS.</div>` : ''}
+          </div>`;
+      }
+
+      // ── Nota explicativa sobre /download ────────────────────────
+      const notaDownload = `
+        <div style="padding:.5rem 1rem;background:#fffdf5;border-top:1px solid #f0eeec;font-size:.7rem;color:#999;line-height:1.6">
+          <strong style="color:var(--text)">¿Por qué /download?</strong> ownCloud devuelve una página HTML cuando accedés al enlace <code style="background:#eee;padding:.05rem .2rem;border-radius:2px">/s/TOKEN</code> sin ese sufijo. 
+          El tag <code>&lt;img src="…"&gt;</code> necesita el binario directo, que solo entrega <code>/s/TOKEN/download</code>. 
+          El script <code>upload.php</code> agrega <code>/download</code> automáticamente a cada URL generada.
+        </div>`;
+
+      resultEl.innerHTML = resumen + htmlUrl + htmlPasos + notaDownload;
+
+    } catch(e) {
+      resultEl.innerHTML = `
+        <div style="padding:.7rem 1rem;color:var(--danger);font-size:.76rem">
+          <strong>❌ No se pudo conectar con test-owncloud.php</strong><br>
+          <span style="color:var(--muted)">Verificá que el archivo esté en el servidor junto a admin.html y que PHP esté activo.</span><br>
+          <span style="font-size:.68rem;color:#bbb;margin-top:.3rem;display:block">Error técnico: ${e.message}</span>
+        </div>`;
+    }
+
+    btn.disabled = false;
+    btn.textContent = '🔌 Probar conexión';
+  }
+
+// ── INIT ───────────────────────────────────────────────────────────
+inicializarEstado();
+renderTabs();
+renderPaneles();
+</script>
+</body>
+</html>

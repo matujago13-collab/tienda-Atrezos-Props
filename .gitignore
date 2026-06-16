@@ -1,0 +1,7 @@
+node_modules/
+*.jpg
+*.jpeg
+*.png
+*.webp
+productos.json
+.netlify/
