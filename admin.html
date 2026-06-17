@@ -94,19 +94,18 @@ select.field-select:focus{outline:none;border-color:var(--verde)}
 .disp-toggle{display:flex;align-items:center;justify-content:center}
 .disp-toggle input[type=checkbox]{accent-color:var(--verde);width:15px;height:15px;cursor:pointer}
 
-/* ── MODAL ── */
-.modal-bg{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.32);z-index:500;opacity:0;pointer-events:none;transition:opacity .2s}
-.modal-bg.open{opacity:1;pointer-events:auto}
-.modal{position:fixed;top:0;right:0;bottom:0;width:420px;max-width:100vw;background:var(--w);overflow-y:auto;padding:0;box-shadow:-6px 0 32px rgba(0,0,0,.12);border-left:1px solid var(--border);z-index:501;transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1)}
-.modal-bg.open .modal{transform:translateX(0)}
-.panel-header{display:flex;align-items:center;justify-content:space-between;padding:1.2rem 1.5rem;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--w);z-index:1}
-.panel-body{padding:1.2rem 1.5rem}
-.modal h2{font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-style:italic;margin:0;color:var(--verde)}
+/* ── FORMULARIO INLINE ── */
+.modal-bg{display:none;max-width:980px;margin:.5rem auto .8rem;padding:0 1.2rem}
+.modal-bg.open{display:block}
+.modal{background:var(--w);border:1px solid var(--border);border-radius:5px;overflow:hidden;border-left:3px solid var(--verde)}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.4rem;border-bottom:1px solid var(--border);background:var(--vl)}
+.panel-body{padding:1.2rem 1.4rem}
+.modal h2{font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-style:italic;margin:0;color:var(--verde)}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem}
 .form-grid .full{grid-column:1/-1}
 .field-lbl{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.3rem;display:block}
 .field-err{font-size:.68rem;color:var(--danger);margin-top:.25rem;display:none}
-.modal-footer{display:flex;justify-content:flex-end;gap:.5rem;padding:1rem 1.5rem;border-top:1px solid var(--border);position:sticky;bottom:0;background:var(--w)}
+.modal-footer{display:flex;justify-content:flex-end;gap:.5rem;padding:.9rem 1.4rem;border-top:1px solid var(--border);background:#fafaf9}
 
 /* ── SECCIÓN CATEGORÍAS ── */
 .cat-table{width:100%;border-collapse:collapse;margin-bottom:1.2rem}
@@ -247,15 +246,6 @@ select.field-select:focus{outline:none;border-color:var(--verde)}
   <p>Editá productos, categorías y configuración. Los cambios se reflejan de inmediato en el catálogo abierto.</p>
 </div>
 
-<div id="paneles"></div>
-
-<div class="info">
-  <strong>Precio Normal:</strong> siempre visible. <strong>Precio Feria:</strong> resaltado cuando Modo Feria está activo.<br>
-  <strong>Precio Feria</strong> debe ser menor que <strong>Precio Normal</strong>. Stock 0 = agotado automáticamente. <code>Disponible</code> desmarcado = agotado.
-</div>
-
-<div class="toast" id="toast"></div>
-
 <!-- ══ MODAL PRODUCTO ══ -->
 <div class="modal-bg" id="modal-bg">
   <div class="modal" id="modal">
@@ -373,6 +363,14 @@ select.field-select:focus{outline:none;border-color:var(--verde)}
   </div>
 </div>
 
+<div id="paneles"></div>
+
+<div class="info">
+  <strong>Precio Normal:</strong> siempre visible. <strong>Precio Feria:</strong> resaltado cuando Modo Feria está activo.<br>
+  <strong>Precio Feria</strong> debe ser menor que <strong>Precio Normal</strong>. Stock 0 = agotado automáticamente. <code>Disponible</code> desmarcado = agotado.
+</div>
+
+<div class="toast" id="toast"></div>
 <script>
 // ══════════════════════════════════════════════════════════════════════════════
 //  ESTRUCTURA BASE
@@ -804,6 +802,7 @@ function abrirNuevoProducto(catId = '') {
   poblarSelectCats(catId);
   document.getElementById('modal-titulo').textContent = 'Nuevo producto';
   document.getElementById('modal-bg').classList.add('open');
+  setTimeout(() => document.getElementById('modal-bg').scrollIntoView({behavior:'smooth', block:'nearest'}), 50);
 }
 
 function abrirEditar(catId, prodId) {
@@ -824,6 +823,7 @@ function abrirEditar(catId, prodId) {
   restaurarSlotDesdeUrl('principal', p.imagen        || '');
   restaurarSlotDesdeUrl('muestra',   p.imagenMuestra || '');
   document.getElementById('modal-bg').classList.add('open');
+  setTimeout(() => document.getElementById('modal-bg').scrollIntoView({behavior:'smooth', block:'nearest'}), 50);
 }
 
 function formularioSucio() {
@@ -885,6 +885,12 @@ async function guardarProductoModal() {
   }
 
   if (!valido) return;
+
+  // Confirmación antes de guardar
+  const _cat = estado.categorias.find(c => c.id === catId);
+  const _accion = editandoId ? 'Actualizar' : 'Guardar nuevo';
+  const _precio = pNormal > 0 ? '\nPrecio: Gs. ' + pNormal.toLocaleString('es') : '';
+  if (!confirm(_accion + ' producto?\n\nNombre: ' + nombre + '\nCategoría: ' + (_cat ? _cat.nombre : catId) + _precio)) return;
 
   // ── Subir ambas imágenes en paralelo (solo las que tienen archivo nuevo)
   const { urlPrincipal, urlMuestra } = await subirAmbosSlots(nombre, catId);
