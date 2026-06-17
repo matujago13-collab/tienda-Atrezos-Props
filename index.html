@@ -376,7 +376,8 @@ main { max-width: 1280px; margin: 0 auto; padding: 48px 40px 100px; }
 // ══════════════════════════════════════════════════════════════════
 //  CONSTANTES
 // ══════════════════════════════════════════════════════════════════
-const SK = 'ap_productos_v2';
+const SK    = 'ap_productos_v2';
+const SC_SK = 'ap_siteconfig_v1'; // siteConfig.json (capa CMS)
 
 // Datos de fallback (cuando no hay localStorage ni productos.json)
 const FALLBACK = {
@@ -396,11 +397,52 @@ let carrito = [];
 let categoriaActiva = 'todas';
 let terminoBusqueda = '';
 
+// siteConfig controla la UI del catálogo (capa CMS)
+let siteCfg = {
+  modoFeria:       false,
+  mostrarPrecios:  true,
+  bannerActivo:    false,
+  textoBanner:     '¡Estamos en FERIA!',
+  subtextoBanner:  'Precios especiales por tiempo limitado',
+  carritoVisible:  true,
+  etiquetas: { oferta: false, feria: true, nuevo: false },
+};
+
 // ══════════════════════════════════════════════════════════════════
 //  CARGA DE DATOS
-//  Prioridad: localStorage → productos.json → fallback vacío
+//  productos: localStorage → /api/productos → fallback
+//  siteConfig: localStorage → /api/config    → defaults
 // ══════════════════════════════════════════════════════════════════
+
+async function cargarSiteCfg() {
+  // 1. localStorage (inmediato)
+  try {
+    const local = JSON.parse(localStorage.getItem(SC_SK));
+    if (local && typeof local === 'object') {
+      siteCfg = { ...siteCfg, ...local,
+        etiquetas: { ...siteCfg.etiquetas, ...(local.etiquetas || {}) } };
+    }
+  } catch(e) {}
+
+  // 2. ownCloud en segundo plano (async, sin bloquear render)
+  try {
+    const res = await fetch('/api/config');
+    if (!res.ok) return;
+    const json = await res.json();
+    if (json && typeof json === 'object') {
+      siteCfg = { ...siteCfg, ...json,
+        etiquetas: { ...siteCfg.etiquetas, ...(json.etiquetas || {}) } };
+      localStorage.setItem(SC_SK, JSON.stringify(siteCfg));
+      // Actualizar UI con config fresca (sin reload completo)
+      aplicarSiteConfig();
+    }
+  } catch(e) {}
+}
+
 async function cargarDatos() {
+  // Cargar siteConfig en paralelo (no bloquea productos)
+  cargarSiteCfg();
+
   // 1. Intentar localStorage primero
   try {
     const guardado = JSON.parse(localStorage.getItem(SK));
@@ -411,14 +453,13 @@ async function cargarDatos() {
     }
   } catch(e) {}
 
-  // 2. Intentar productos.json
+  // 2. Intentar /api/productos (Netlify function → ownCloud)
   try {
-    const res = await fetch('productos.json');
+    const res = await fetch('/api/productos');
     if (!res.ok) throw new Error();
     const json = await res.json();
-    if (json.categorias && json.config) {
+    if (json && json.categorias && json.config) {
       datos = json;
-      // Guardar en localStorage para sincronización futura
       localStorage.setItem(SK, JSON.stringify(datos));
       inicializar();
       return;
@@ -437,7 +478,6 @@ window.addEventListener('storage', e => {
       const nuevo = JSON.parse(e.newValue);
       if (nuevo && nuevo.config && nuevo.categorias) {
         datos = nuevo;
-        // Limpiar carrito con items que ya no existen
         const todosIds = nuevo.categorias.flatMap(c => c.productos.map(p => p.id));
         carrito = carrito.filter(i => todosIds.includes(i.id));
         inicializar();
@@ -445,7 +485,48 @@ window.addEventListener('storage', e => {
       }
     } catch(e) {}
   }
+  // Escuchar cambios de siteConfig desde el admin
+  if (e.key === SC_SK && e.newValue) {
+    try {
+      const nuevo = JSON.parse(e.newValue);
+      if (nuevo && typeof nuevo === 'object') {
+        siteCfg = { ...siteCfg, ...nuevo,
+          etiquetas: { ...siteCfg.etiquetas, ...(nuevo.etiquetas || {}) } };
+        aplicarSiteConfig();
+        if (datos) renderCatalogo(datos.categorias, datos.config);
+        mostrarToast('Configuración del sitio actualizada ✓');
+      }
+    } catch(e) {}
+  }
 });
+
+// Aplica siteConfig a la UI (se puede llamar sin recargar el catálogo)
+function aplicarSiteConfig() {
+  const sc = siteCfg;
+
+  // modoFeria: siteConfig tiene prioridad sobre productos.json/config
+  const mf = sc.modoFeria ?? (datos?.config?.modoFeria ?? false);
+  document.getElementById('feria-badge').classList.toggle('visible', mf);
+
+  // Banner: usar texto de siteConfig si bannerActivo, sino el modo feria legacy
+  const bannerEl = document.getElementById('feria-banner');
+  if (sc.bannerActivo) {
+    bannerEl.classList.add('visible');
+    const h2 = bannerEl.querySelector('h2');
+    const p  = bannerEl.querySelector('p');
+    if (h2) h2.textContent = sc.textoBanner     || '¡Estamos en FERIA!';
+    if (p)  p.textContent  = sc.subtextoBanner  || '';
+  } else if (mf) {
+    // Fallback: banner por modo feria (texto original)
+    bannerEl.classList.add('visible');
+  } else {
+    bannerEl.classList.remove('visible');
+  }
+
+  // Carrito visible / oculto
+  const cartBtn = document.querySelector('.cart-btn');
+  if (cartBtn) cartBtn.style.display = sc.carritoVisible !== false ? '' : 'none';
+}
 
 function inicializar() {
   const { config, categorias } = datos;
@@ -453,9 +534,8 @@ function inicializar() {
   document.title = config.nombreTienda;
   if (config.telefono) document.getElementById('nav-tel').textContent = config.telefono;
 
-  const feriaVisible = config.modoFeria;
-  document.getElementById('feria-badge').classList.toggle('visible', feriaVisible);
-  document.getElementById('feria-banner').classList.toggle('visible', feriaVisible);
+  // Aplicar siteConfig primero (UI global)
+  aplicarSiteConfig();
 
   renderFiltros(categorias);
   renderCatalogo(categorias, config);
@@ -510,6 +590,12 @@ function aplicarFiltros() {
 
 // ── CATÁLOGO ───────────────────────────────────────────────────────
 function renderCatalogo(categorias, config) {
+  if (!categorias || categorias.length === 0) {
+    document.getElementById('empty-search').style.display = 'block';
+    document.getElementById('empty-search').querySelector('p').textContent = 'El catálogo está vacío o cargando — volvé en unos instantes.';
+    return;
+  }
+  document.getElementById('empty-search').style.display = 'none';
   document.getElementById('catalog').innerHTML = categorias.map(cat => `
     <section class="category-section" data-cat="${cat.id}">
       <h2 class="category-title"><em>${cat.nombre}</em></h2>
@@ -543,9 +629,16 @@ function formatPrecio(precio, moneda) {
 }
 
 function renderPrecioBlock(p, config) {
-  const { modoFeria, moneda } = config;
-  const pNormal = p.precioNormal || p.precio || 0;
-  const pFeria  = p.precioFeria  || 0;
+  // siteCfg.mostrarPrecios oculta todos los precios
+  if (siteCfg.mostrarPrecios === false) {
+    return `<span class="no-price">Consultá precio</span>`;
+  }
+
+  // modoFeria: siteConfig tiene prioridad
+  const modoFeria = siteCfg.modoFeria ?? config.modoFeria ?? false;
+  const moneda    = config.moneda || 'Gs.';
+  const pNormal   = p.precioNormal || p.precio || 0;
+  const pFeria    = p.precioFeria  || 0;
 
   if (pNormal === 0 && pFeria === 0) return `<span class="no-price">Consultá precio</span>`;
 
@@ -575,19 +668,36 @@ function renderPrecioBlock(p, config) {
   return `<span class="no-price">Consultá precio</span>`;
 }
 
+function renderEtiquetasSiteCfg(modoFeriaEfectivo) {
+  const et = siteCfg.etiquetas || {};
+  const badges = [];
+  if (et.oferta) badges.push(`<span style="background:#fdecea;color:#b85c5c;font-size:.62rem;font-weight:700;padding:2px 9px;border-radius:20px;letter-spacing:.05em;line-height:1">OFERTA</span>`);
+  if (et.feria && modoFeriaEfectivo) badges.push(`<span style="background:#fff4ee;color:#b06030;font-size:.62rem;font-weight:700;padding:2px 9px;border-radius:20px;letter-spacing:.05em;line-height:1">FERIA</span>`);
+  if (et.nuevo) badges.push(`<span style="background:#e8ede7;color:#506549;font-size:.62rem;font-weight:700;padding:2px 9px;border-radius:20px;letter-spacing:.05em;line-height:1">NUEVO</span>`);
+  if (!badges.length) return '';
+  return `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">${badges.join('')}</div>`;
+}
+
 function renderTarjeta(p, config) {
-  const { modoFeria } = config;
-  const agotado = estaAgotado(p);
-  const tag = stockTag(p.disponible, p.stock);
+  // modoFeria efectivo: siteConfig tiene prioridad
+  const modoFeria    = siteCfg.modoFeria ?? config.modoFeria ?? false;
+  const carritoOn    = siteCfg.carritoVisible !== false;
+  const agotado      = estaAgotado(p);
+  const tag          = stockTag(p.disponible, p.stock);
   const imgPrincipal = p.imagen || p.foto1 || '';
   const imgMuestra   = p.imagenMuestra || p.foto2 || imgPrincipal;
   const precioHTML   = renderPrecioBlock(p, config);
+  const etiquetasHTML = !agotado ? renderEtiquetasSiteCfg(modoFeria) : '';
 
-  const btnHTML = agotado
-    ? `<button class="add-btn" disabled>Agotado</button>`
-    : modoFeria
+  let btnHTML = '';
+  if (agotado) {
+    btnHTML = `<button class="add-btn" disabled>Agotado</button>`;
+  } else if (carritoOn) {
+    btnHTML = modoFeria
       ? `<button class="add-btn agregar" onclick="agregarAlCarrito(${p.id})">+ Agregar</button>`
       : `<button class="add-btn interesa" onclick="agregarAlCarrito(${p.id})">♡ Me interesa</button>`;
+  }
+  // carritoOn === false → no hay botón (solo info + precio)
 
   return `
     <div class="card${agotado ? ' agotado' : ''}" data-nombre="${p.nombre.toLowerCase()}">
@@ -598,6 +708,7 @@ function renderTarjeta(p, config) {
       </div>
       <div class="card-info">
         <span class="stock-tag ${tag.clase}">${tag.texto}</span>
+        ${etiquetasHTML}
         <div class="card-name">${p.nombre}</div>
         ${p.descripcion ? `<div class="card-desc">${p.descripcion}</div>` : ''}
         <div class="card-footer">
@@ -613,9 +724,13 @@ function todosLosProductos() {
   return datos.categorias.flatMap(c => c.productos);
 }
 
-function precioEfectivo(p, modoFeria) {
-  const pNormal = p.precioNormal || p.precio || 0;
-  const pFeria  = p.precioFeria  || 0;
+function precioEfectivo(p, modoFeriaFallback) {
+  const pNormal  = p.precioNormal || p.precio || 0;
+  const pFeria   = p.precioFeria  || 0;
+  // siteConfig.mostrarPrecios === false → no hay precio efectivo
+  if (siteCfg.mostrarPrecios === false) return 0;
+  // modoFeria: siteConfig tiene prioridad
+  const modoFeria = siteCfg.modoFeria ?? modoFeriaFallback ?? false;
   if (modoFeria && pFeria > 0) return pFeria;
   return pNormal;
 }

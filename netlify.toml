@@ -21,3 +21,13 @@
   from = "/api/probar-owncloud"
   to   = "/.netlify/functions/probar-owncloud"
   status = 200
+
+[[redirects]]
+  from = "/api/share"
+  to   = "/.netlify/functions/share"
+  status = 200
+
+[[redirects]]
+  from = "/api/config"
+  to   = "/.netlify/functions/config"
+  status = 200
