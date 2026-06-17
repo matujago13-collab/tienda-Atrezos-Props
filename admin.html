@@ -95,9 +95,9 @@ select.field-select:focus{outline:none;border-color:var(--verde)}
 .disp-toggle input[type=checkbox]{accent-color:var(--verde);width:15px;height:15px;cursor:pointer}
 
 /* ── FORMULARIO INLINE ── */
-.modal-bg{display:none;max-width:980px;margin:.5rem auto .8rem;padding:0 1.2rem}
-.modal-bg.open{display:block}
-.modal{background:var(--w);border:1px solid var(--border);border-radius:5px;overflow:hidden;border-left:3px solid var(--verde)}
+.modal-bg{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.45);overflow-y:auto;padding:1.5rem 1rem}
+.modal-bg.open{display:flex;align-items:flex-start;justify-content:center}
+.modal{background:var(--w);border:1px solid var(--border);border-radius:5px;overflow:hidden;border-left:3px solid var(--verde);width:100%;max-width:900px;margin:auto}
 .panel-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.4rem;border-bottom:1px solid var(--border);background:var(--vl)}
 .panel-body{padding:1.2rem 1.4rem}
 .modal h2{font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-style:italic;margin:0;color:var(--verde)}
@@ -1042,7 +1042,6 @@ function abrirNuevoProducto(catId = '') {
   poblarSelectCats(catId);
   document.getElementById('modal-titulo').textContent = 'Nuevo producto';
   document.getElementById('modal-bg').classList.add('open');
-  setTimeout(() => document.getElementById('modal-bg').scrollIntoView({behavior:'smooth', block:'nearest'}), 50);
 }
 
 function abrirEditar(catId, prodId) {
@@ -1063,7 +1062,6 @@ function abrirEditar(catId, prodId) {
   restaurarSlotDesdeUrl('principal', p.imagen        || '');
   restaurarSlotDesdeUrl('muestra',   p.imagenMuestra || '');
   document.getElementById('modal-bg').classList.add('open');
-  setTimeout(() => document.getElementById('modal-bg').scrollIntoView({behavior:'smooth', block:'nearest'}), 50);
 }
 
 function formularioSucio() {
