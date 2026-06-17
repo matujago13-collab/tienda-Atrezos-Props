@@ -208,6 +208,14 @@ select.field-select:focus{outline:none;border-color:var(--verde)}
 /* ── ACCIONES TD ── */
 .td-actions{display:flex;gap:.3rem;justify-content:flex-end}
 
+/* ── SITE TOGGLE ── */
+.site-toggle{position:relative;display:inline-flex;flex-shrink:0;width:42px;height:24px;cursor:pointer}
+.site-toggle input{opacity:0;width:0;height:0;position:absolute}
+.site-toggle-slider{position:absolute;inset:0;background:#d9d9d9;border-radius:24px;transition:background .2s}
+.site-toggle-slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.site-toggle input:checked + .site-toggle-slider{background:var(--verde)}
+.site-toggle input:checked + .site-toggle-slider::before{transform:translateX(18px)}
+
 @media(max-width:600px){
   input[type=number]{width:82px}
   th,td{padding-left:.5rem;padding-right:.5rem}
@@ -404,15 +412,125 @@ const CONFIG_BASE = {
   telefono: '0986 332140',
 };
 
-const SK = 'ap_productos_v2';
+const SK    = 'ap_productos_v2';
+const SC_SK = 'ap_siteconfig_v1'; // clave localStorage para siteConfig
 
 // ── TABS dinámicas ─────────────────────────────────────────────────
 function getTabs() {
   return [
     ...estado.categorias.map(c => ({ key: c.id, label: c.nombre })),
-    { key: '__cats__',   label: '📂 Categorías' },
-    { key: '__config__', label: '⚙ Config' },
+    { key: '__cats__',    label: '📂 Categorías' },
+    { key: '__sitio__',   label: '🌐 Sitio' },
+    { key: '__config__',  label: '⚙ Config' },
   ];
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  SITE CONFIG — Estado independiente del catálogo de productos
+// ══════════════════════════════════════════════════════════════════════════════
+const SC_DEFAULT = {
+  modoFeria:       false,
+  mostrarPrecios:  true,
+  bannerActivo:    false,
+  textoBanner:     '¡Estamos en FERIA!',
+  subtextoBanner:  'Precios especiales por tiempo limitado',
+  carritoVisible:  true,
+  etiquetas: { oferta: false, feria: true, nuevo: false },
+};
+
+let siteConfig = { ...SC_DEFAULT, etiquetas: { ...SC_DEFAULT.etiquetas } };
+
+function scCambiar(campo, valor) {
+  siteConfig[campo] = valor;
+  const el = document.getElementById('sc-estado');
+  if (el) el.textContent = '⚠ Cambios sin guardar';
+  if (campo === 'modoFeria') {
+    // Sincronizar con estado.config para que guardarTodo() también lo refleje
+    estado.config.modoFeria = valor;
+    sincronizarToggleFeria();
+  }
+}
+
+function scCambiarEtiqueta(nombre, valor) {
+  if (!siteConfig.etiquetas) siteConfig.etiquetas = {};
+  siteConfig.etiquetas[nombre] = valor;
+  const el = document.getElementById('sc-estado');
+  if (el) el.textContent = '⚠ Cambios sin guardar';
+}
+
+function scActualizarPreviewBanner() {
+  const preview = document.getElementById('sc-banner-preview');
+  const activo  = document.getElementById('sc-bannerActivo')?.checked;
+  if (preview) preview.style.display = activo ? 'block' : 'none';
+  const titulo = document.getElementById('sc-textoBanner')?.value || '';
+  const sub    = document.getElementById('sc-subtextoBanner')?.value || '';
+  const elT = document.getElementById('sc-prev-titulo');
+  const elS = document.getElementById('sc-prev-sub');
+  if (elT) elT.textContent = titulo;
+  if (elS) elS.textContent = sub;
+}
+
+async function guardarSiteConfig(btn) {
+  const texto  = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳ Guardando…';
+
+  // Guardar en localStorage para sincronización inmediata con catálogo
+  localStorage.setItem(SC_SK, JSON.stringify(siteConfig));
+
+  // Guardar en ownCloud vía Netlify Function
+  const payload = {
+    ...siteConfig,
+    config: { ...estado.config },  // credenciales por si env vars no están
+  };
+
+  try {
+    const res  = await fetch('/api/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      toast('Configuración del sitio guardada ☁');
+      const el = document.getElementById('sc-estado');
+      if (el) el.textContent = 'Sincronizado con ownCloud ✓';
+    } else {
+      toast('⚠ Guardado local. ownCloud: ' + (data.error || 'Sin conexión'), 'err');
+      const el = document.getElementById('sc-estado');
+      if (el) el.textContent = 'Guardado local (ownCloud no disponible)';
+    }
+  } catch {
+    toast('Guardado local — ownCloud no responde', 'err');
+    const el = document.getElementById('sc-estado');
+    if (el) el.textContent = 'Guardado local (sin red)';
+  }
+
+  btn.disabled = false;
+  btn.textContent = texto;
+}
+
+async function cargarSiteConfigDesdeServidor() {
+  // 1. localStorage primero (rápido)
+  try {
+    const local = JSON.parse(localStorage.getItem(SC_SK));
+    if (local && typeof local === 'object') {
+      siteConfig = { ...SC_DEFAULT, ...local,
+        etiquetas: { ...SC_DEFAULT.etiquetas, ...(local.etiquetas || {}) } };
+    }
+  } catch {}
+
+  // 2. ownCloud en segundo plano
+  try {
+    const res  = await fetch('/api/config');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data && typeof data === 'object') {
+      siteConfig = { ...SC_DEFAULT, ...data,
+        etiquetas: { ...SC_DEFAULT.etiquetas, ...(data.etiquetas || {}) } };
+      localStorage.setItem(SC_SK, JSON.stringify(siteConfig));
+    }
+  } catch {}
 }
 
 // ── ESTADO ─────────────────────────────────────────────────────────
@@ -577,6 +695,128 @@ function renderPaneles() {
     </div>`;
   wrap.appendChild(panelCats);
   renderCatTabla();
+
+  // ── Panel SITIO ────────────────────────────────────────────────────
+  const panelSitio = document.createElement('div');
+  panelSitio.className = `panel${'__sitio__' === activa ? ' active' : ''}`;
+  panelSitio.dataset.key = '__sitio__';
+  const sc = siteConfig;
+  panelSitio.innerHTML = `
+    <div class="config-form">
+      <h3>🌐 Control Visual del Catálogo</h3>
+      <p style="font-size:.76rem;color:var(--muted);margin-bottom:1.2rem">
+        Estos cambios afectan la apariencia del catálogo público en tiempo real.
+        Guardá para sincronizar con ownCloud.
+      </p>
+
+      <!-- ── MODO FERIA ── -->
+      <div style="border:1px solid var(--border);border-radius:5px;overflow:hidden;margin-bottom:.8rem">
+        <div style="padding:.75rem 1rem;background:#fff9f5;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:1rem">
+          <div>
+            <div style="font-size:.85rem;font-weight:500;color:var(--feria)">🏷 Modo Feria</div>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:.15rem">Activa precios feria, badges y banner especial en el catálogo</div>
+          </div>
+          <label class="site-toggle">
+            <input type="checkbox" id="sc-modoFeria" ${sc.modoFeria?'checked':''} onchange="scCambiar('modoFeria',this.checked);sincronizarToggleFeria()">
+            <span class="site-toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- ── MOSTRAR PRECIOS ── -->
+      <div style="border:1px solid var(--border);border-radius:5px;overflow:hidden;margin-bottom:.8rem">
+        <div style="padding:.75rem 1rem;background:var(--w);display:flex;align-items:center;justify-content:space-between;gap:1rem">
+          <div>
+            <div style="font-size:.85rem;font-weight:500">💰 Mostrar Precios</div>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:.15rem">Si está desactivado, el catálogo solo muestra "Consultá precio"</div>
+          </div>
+          <label class="site-toggle">
+            <input type="checkbox" id="sc-mostrarPrecios" ${sc.mostrarPrecios!==false?'checked':''} onchange="scCambiar('mostrarPrecios',this.checked)">
+            <span class="site-toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- ── BANNER GLOBAL ── -->
+      <div style="border:1px solid var(--border);border-radius:5px;overflow:hidden;margin-bottom:.8rem">
+        <div style="padding:.75rem 1rem;background:var(--w);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:1rem">
+          <div>
+            <div style="font-size:.85rem;font-weight:500">📢 Banner Global</div>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:.15rem">Mensaje destacado que aparece encima del catálogo</div>
+          </div>
+          <label class="site-toggle">
+            <input type="checkbox" id="sc-bannerActivo" ${sc.bannerActivo?'checked':''} onchange="scCambiar('bannerActivo',this.checked);scActualizarPreviewBanner()">
+            <span class="site-toggle-slider"></span>
+          </label>
+        </div>
+        <div style="padding:.85rem 1rem;display:grid;grid-template-columns:1fr;gap:.6rem">
+          <div class="field">
+            <label class="field-lbl">Título del banner</label>
+            <input type="text" class="field-input" id="sc-textoBanner"
+              value="${escHtml(sc.textoBanner||'¡Estamos en FERIA!')}"
+              oninput="scCambiar('textoBanner',this.value);scActualizarPreviewBanner()"
+              placeholder="Ej: ¡Estamos en FERIA!">
+          </div>
+          <div class="field">
+            <label class="field-lbl">Subtexto</label>
+            <input type="text" class="field-input" id="sc-subtextoBanner"
+              value="${escHtml(sc.subtextoBanner||'Precios especiales por tiempo limitado')}"
+              oninput="scCambiar('subtextoBanner',this.value);scActualizarPreviewBanner()"
+              placeholder="Ej: Precios especiales por tiempo limitado">
+          </div>
+          <!-- Preview del banner -->
+          <div id="sc-banner-preview" style="display:${sc.bannerActivo?'block':'none'};margin-top:.2rem">
+            <div style="font-size:.68rem;color:var(--muted);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.07em">Vista previa:</div>
+            <div style="background:linear-gradient(135deg,#506549,#3a4d34);color:#fff;text-align:center;padding:12px 16px;border-radius:4px">
+              <div id="sc-prev-titulo" style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-style:italic">${escHtml(sc.textoBanner||'¡Estamos en FERIA!')}</div>
+              <div id="sc-prev-sub" style="font-size:.75rem;opacity:.8;margin-top:3px">${escHtml(sc.subtextoBanner||'Precios especiales por tiempo limitado')}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CARRITO ── -->
+      <div style="border:1px solid var(--border);border-radius:5px;overflow:hidden;margin-bottom:.8rem">
+        <div style="padding:.75rem 1rem;background:var(--w);display:flex;align-items:center;justify-content:space-between;gap:1rem">
+          <div>
+            <div style="font-size:.85rem;font-weight:500">🛒 Carrito / Lista de interés</div>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:.15rem">Muestra u oculta el botón de carrito en el catálogo</div>
+          </div>
+          <label class="site-toggle">
+            <input type="checkbox" id="sc-carritoVisible" ${sc.carritoVisible!==false?'checked':''} onchange="scCambiar('carritoVisible',this.checked)">
+            <span class="site-toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- ── ETIQUETAS VISUALES ── -->
+      <div style="border:1px solid var(--border);border-radius:5px;overflow:hidden;margin-bottom:1.2rem">
+        <div style="padding:.75rem 1rem;background:var(--w);border-bottom:1px solid var(--border)">
+          <div style="font-size:.85rem;font-weight:500">🏷 Etiquetas visuales en tarjetas</div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:.15rem">Las etiquetas activas aparecen como badges en los productos del catálogo</div>
+        </div>
+        <div style="padding:.85rem 1rem;display:flex;gap:1rem;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:.45rem;font-size:.82rem;cursor:pointer">
+            <input type="checkbox" id="sc-et-oferta" ${(sc.etiquetas||{}).oferta?'checked':''} onchange="scCambiarEtiqueta('oferta',this.checked)" style="accent-color:var(--danger);width:15px;height:15px">
+            <span style="background:#fdecea;color:var(--danger);padding:2px 10px;border-radius:20px;font-size:.73rem;font-weight:600;letter-spacing:.04em">OFERTA</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:.45rem;font-size:.82rem;cursor:pointer">
+            <input type="checkbox" id="sc-et-feria" ${(sc.etiquetas||{}).feria!==false?'checked':''} onchange="scCambiarEtiqueta('feria',this.checked)" style="accent-color:var(--feria);width:15px;height:15px">
+            <span style="background:#fff4ee;color:var(--feria);padding:2px 10px;border-radius:20px;font-size:.73rem;font-weight:600;letter-spacing:.04em">FERIA</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:.45rem;font-size:.82rem;cursor:pointer">
+            <input type="checkbox" id="sc-et-nuevo" ${(sc.etiquetas||{}).nuevo?'checked':''} onchange="scCambiarEtiqueta('nuevo',this.checked)" style="accent-color:var(--verde);width:15px;height:15px">
+            <span style="background:var(--vl);color:var(--verde);padding:2px 10px;border-radius:20px;font-size:.73rem;font-weight:600;letter-spacing:.04em">NUEVO</span>
+          </label>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.6rem">
+        <span id="sc-estado" style="font-size:.73rem;color:var(--muted)">Sin cambios pendientes</span>
+        <button class="btn btn-p" onclick="guardarSiteConfig(this)">☁ Guardar en ownCloud</button>
+      </div>
+    </div>`;
+  wrap.appendChild(panelSitio);
 
   // Panel Config
   const panelConfig = document.createElement('div');
@@ -1036,9 +1276,15 @@ function guardarTodo() {
   });
 
   persistir();
-  // También guardar en productos.json para que index.html lo cargue
-  guardarEnServidor().catch(() => {});
   toast('Guardado ✓');
+  // Sincronizar con ownCloud en segundo plano — mostrar error si falla
+  guardarEnServidor().then(resultado => {
+    if (resultado && resultado.ok === false) {
+      toast('⚠ ownCloud: ' + (resultado.error || 'No se pudo sincronizar'), 'err');
+    }
+  }).catch(() => {
+    // Silencioso: fallo de red (normal en desarrollo local sin servidor)
+  });
 }
 
 async function guardarEnServidor() {
@@ -1058,13 +1304,15 @@ async function guardarEnServidor() {
     }))
   };
   try {
-    await fetch('/api/guardar', {
+    const res = await fetch('/api/guardar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(exportData)
     });
+    if (!res.ok) return null; // Error HTTP (404 en local sin server.js) — silencioso
+    return await res.json();  // Devuelve { ok: true } o { ok: false, error: '...' }
   } catch(e) {
-    // Silencioso si no hay servidor corriendo
+    return null; // Error de red — silencioso (entorno local sin servidor)
   }
 }
 
@@ -1488,6 +1736,12 @@ async function subirAmbosSlots(nombreProducto, catId) {
 inicializarEstado();
 renderTabs();
 renderPaneles();
+
+// Cargar siteConfig desde ownCloud en segundo plano
+cargarSiteConfigDesdeServidor().then(() => {
+  // Re-renderizar el panel Sitio si estaba activo
+  if (activa === '__sitio__') { renderPaneles(); cambiarTab('__sitio__'); }
+});
 </script>
 </body>
 </html>
