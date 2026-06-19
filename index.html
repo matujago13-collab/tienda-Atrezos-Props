@@ -448,19 +448,18 @@ async function cargarDatos() {
   // Cargar siteConfig en paralelo (no bloquea productos)
   cargarSiteCfg();
 
-  // 1. Intentar localStorage primero
+  // 1. Render rápido desde localStorage (sin bloquear fetch fresco)
   try {
     const guardado = JSON.parse(localStorage.getItem(SK));
     if (guardado && guardado.config && guardado.categorias) {
       datos = guardado;
       inicializar();
-      return;
     }
   } catch(e) {}
 
-  // 2. Intentar /productos.json (archivo estático en repo)
+  // 2. Siempre buscar datos frescos desde /api/productos (ownCloud)
   try {
-    const res = await fetch('/productos.json');
+    const res = await fetch('/api/productos');
     if (!res.ok) throw new Error();
     const json = await res.json();
     if (json && json.categorias && json.config) {
@@ -471,9 +470,11 @@ async function cargarDatos() {
     }
   } catch(e) {}
 
-  // 3. Fallback
-  datos = FALLBACK;
-  inicializar();
+  // 3. Fallback si la API falla y no había localStorage
+  if (!datos || !datos.categorias) {
+    datos = FALLBACK;
+    inicializar();
+  }
 }
 
 // Escuchar cambios de Admin en tiempo real (cross-tab)
