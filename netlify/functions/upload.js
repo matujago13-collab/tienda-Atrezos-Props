@@ -59,14 +59,26 @@ async function webdavPut(davBase, user, pass, rutaCompleta, buffer) {
 async function obtenerShareToken(servidor, user, pass, ruta) {
   const auth    = { username: user, password: pass };
   const headers = { 'OCS-APIRequest': 'true', 'Accept': 'application/json' };
+
+  // Normaliza la respuesta OCS: puede ser array u objeto único según versión de ownCloud
+  function normalizarShares(ocsData) {
+    if (!ocsData) return [];
+    return Array.isArray(ocsData) ? ocsData : [ocsData];
+  }
+
   for (const ocs of ['/ocs/v2.php', '/ocs/v1.php']) {
     const api = servidor + ocs + '/apps/files_sharing/api/v1/shares';
+
+    // 1. Buscar share público existente
     try {
       const { data } = await axios.get(api, { auth, headers,
         params: { path: ruta, reshares: false }, validateStatus: s => s === 200 });
-      const pub = (data?.ocs?.data || []).find(s => s.share_type === 3 && s.token);
+      const shares = normalizarShares(data?.ocs?.data);
+      const pub = shares.find(s => s.share_type === 3 && s.token);
       if (pub) return pub.token;
     } catch {}
+
+    // 2. Crear share público nuevo
     try {
       const p = new URLSearchParams({ path: ruta, shareType:'3', permissions:'1' });
       const { data } = await axios.post(api, p.toString(), {
@@ -75,6 +87,15 @@ async function obtenerShareToken(servidor, user, pass, ruta) {
       });
       const token = data?.ocs?.data?.token;
       if (token) return token;
+    } catch {}
+
+    // 3. Por si el POST creó el share pero no devolvió el token, buscarlo de nuevo
+    try {
+      const { data } = await axios.get(api, { auth, headers,
+        params: { path: ruta, reshares: false }, validateStatus: s => s === 200 });
+      const shares = normalizarShares(data?.ocs?.data);
+      const pub = shares.find(s => s.share_type === 3 && s.token);
+      if (pub) return pub.token;
     } catch {}
   }
   return null;
@@ -153,10 +174,12 @@ exports.handler = async (event) => {
     const token    = await obtenerShareToken(servidor, ocUser, ocPass, rutaCompleta);
 
     if (!token) {
+      console.error('[upload] obtenerShareToken devolvió null para ruta:', rutaCompleta);
+      console.error('[upload] servidor:', servidor, '| ocUser:', ocUser);
       return {
         statusCode: 200,
         body: JSON.stringify({ ok:false, subidaOk:true, ruta:rutaCompleta, nombre:filename,
-          error:`Imagen subida pero no se pudo crear el link público. Creá el share manualmente en ownCloud.` })
+          error:`Imagen subida pero no se pudo crear el link público. Revisá los logs de Netlify Functions.` })
       };
     }
 

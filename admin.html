@@ -34,8 +34,10 @@ nav{background:var(--w);border-bottom:1px solid var(--border);padding:0 1.2rem;h
 .modo-feria-on{color:var(--feria)!important;font-weight:600}
 
 /* ── TABS ── */
-.tabs{background:var(--w);border-bottom:1px solid var(--border);padding:0 1.2rem;display:flex;gap:0;overflow-x:auto;scrollbar-width:none}
-.tabs::-webkit-scrollbar{display:none}
+.tabs{background:var(--w);border-bottom:1px solid var(--border);padding:0 1.2rem;display:flex;gap:0;overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.tabs::-webkit-scrollbar{height:3px}
+.tabs::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.tabs::-webkit-scrollbar-track{background:transparent}
 .tab{padding:.65rem 1.1rem;font-size:.8rem;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;color:var(--muted);background:none;border-top:none;border-left:none;border-right:none;font-family:'Jost',sans-serif;transition:all .15s}
 .tab:hover{color:var(--verde)}
 .tab.active{color:var(--verde);border-bottom-color:var(--verde);font-weight:500}
@@ -97,15 +99,22 @@ select.field-select:focus{outline:none;border-color:var(--verde)}
 /* ── FORMULARIO INLINE ── */
 .modal-bg{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.45);overflow-y:auto;padding:1.5rem 1rem}
 .modal-bg.open{display:flex;align-items:flex-start;justify-content:center}
-.modal{background:var(--w);border:1px solid var(--border);border-radius:5px;overflow:hidden;border-left:3px solid var(--verde);width:100%;max-width:900px;margin:auto}
+.product-form-modal{background:var(--w);border:1px solid var(--border);border-radius:5px;overflow:hidden;border-left:3px solid var(--verde);width:100%;max-width:900px;margin:auto}
 .panel-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.4rem;border-bottom:1px solid var(--border);background:var(--vl)}
 .panel-body{padding:1.2rem 1.4rem}
-.modal h2{font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-style:italic;margin:0;color:var(--verde)}
+.product-form-modal h2{font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-style:italic;margin:0;color:var(--verde)}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem}
 .form-grid .full{grid-column:1/-1}
 .field-lbl{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.3rem;display:block}
 .field-err{font-size:.68rem;color:var(--danger);margin-top:.25rem;display:none}
 .modal-footer{display:flex;justify-content:flex-end;gap:.5rem;padding:.9rem 1.4rem;border-top:1px solid var(--border);background:#fafaf9}
+
+/* ── MINI-CONFIRM CUSTOM (reemplaza window.confirm nativo) ── */
+.mini-confirm{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);animation:mcFadeIn .12s ease}
+@keyframes mcFadeIn{from{opacity:0}to{opacity:1}}
+.mini-confirm-box{background:var(--w);border-radius:5px;padding:1.4rem 1.6rem;max-width:340px;width:90%;border-left:3px solid var(--verde);box-shadow:0 4px 24px rgba(0,0,0,.18)}
+.mini-confirm-msg{margin:0 0 1rem;font-size:.84rem;line-height:1.5;color:var(--text)}
+.mini-confirm-btns{display:flex;justify-content:flex-end;gap:.5rem}
 
 /* ── SECCIÓN CATEGORÍAS ── */
 .cat-table{width:100%;border-collapse:collapse;margin-bottom:1.2rem}
@@ -221,6 +230,11 @@ select.field-select:focus{outline:none;border-color:var(--verde)}
   th,td{padding-left:.5rem;padding-right:.5rem}
   .form-grid{grid-template-columns:1fr}
   .form-grid .full{grid-column:1}
+  .tabs{flex-wrap:wrap;overflow-x:visible;scrollbar-width:none;padding:.3rem .8rem}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{padding:.5rem .75rem;font-size:.75rem}
+  nav{height:auto;padding:.6rem 1rem;flex-wrap:wrap;gap:.5rem}
+  .nav-r{flex-wrap:wrap;gap:.4rem}
 }
 </style>
 </head>
@@ -255,8 +269,8 @@ select.field-select:focus{outline:none;border-color:var(--verde)}
 </div>
 
 <!-- ══ MODAL PRODUCTO ══ -->
-<div class="modal-bg" id="modal-bg">
-  <div class="modal" id="modal">
+<div class="modal-bg" id="modal-bg" onclick="if(event.target===this)cerrarModal()">
+  <div class="product-form-modal" id="modal">
     <div class="panel-header">
       <h2 id="modal-titulo">Nuevo producto</h2>
       <button onclick="cerrarModal()" style="background:var(--bg);border:1px solid var(--border);border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:.9rem;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0" onmouseover="this.style.borderColor='var(--danger)';this.style.color='var(--danger)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'" title="Cerrar">✕</button>
@@ -357,7 +371,7 @@ select.field-select:focus{outline:none;border-color:var(--verde)}
 
         </div>
         <p class="slot-nota">
-          <strong>Subir archivo:</strong> se optimiza a WebP y se guarda en la carpeta <code>imagenes/</code> automáticamente (requiere que el servidor esté corriendo con <code>node server.js</code>).
+          <strong>Subir archivo:</strong> se optimiza a WebP y se sube a ownCloud automáticamente (requiere que el servidor esté corriendo con <code>node admin-server.js</code>).
           <strong>URL manual:</strong> funciona siempre, pegá cualquier URL de imagen de internet.
           Si subís un archivo, su URL reemplaza la que hayas escrito.
         </p>
@@ -414,6 +428,10 @@ const CONFIG_BASE = {
 
 const SK    = 'ap_productos_v2';
 const SC_SK = 'ap_siteconfig_v1'; // clave localStorage para siteConfig
+
+// ── Entorno: local (admin-server.js) vs producción (Netlify) ──────
+const IS_LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
+const API_BASE = IS_LOCAL ? 'http://localhost:3333' : '';
 
 // ── TABS dinámicas ─────────────────────────────────────────────────
 function getTabs() {
@@ -485,7 +503,7 @@ async function guardarSiteConfig(btn) {
   };
 
   try {
-    const res  = await fetch('/api/config', {
+    const res  = await fetch(API_BASE + '/api/config', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -522,7 +540,7 @@ async function cargarSiteConfigDesdeServidor() {
 
   // 2. ownCloud en segundo plano
   try {
-    const res  = await fetch('/api/config');
+    const res  = await fetch(API_BASE + '/api/config');
     if (!res.ok) return;
     const data = await res.json();
     if (data && typeof data === 'object') {
@@ -861,7 +879,7 @@ function renderPaneles() {
       <h3>📁 Imágenes — Servidor Local</h3>
       <p style="font-size:.75rem;color:var(--muted);margin-bottom:1rem">
         Las imágenes se guardan automáticamente en la carpeta <code>imagenes/</code> junto a tus archivos HTML cuando subís un archivo desde el admin.
-        Solo necesitás tener el servidor corriendo con <code>node server.js</code>.
+        Solo necesitás tener el servidor corriendo con <code>node admin-server.js</code>.
       </p>
       <div style="background:#eef4eb;border:1px solid #c5dbbe;border-radius:4px;padding:.8rem 1rem;font-size:.78rem;color:var(--verde);margin-bottom:1rem">
         <strong>Flujo automático:</strong> Subís imagen → WebP → sube a tu ownCloud → URL pública lista para el catálogo<br>
@@ -982,37 +1000,21 @@ function eliminarCategoria(id) {
   if (!cat) return;
 
   if (cat.productos.length > 0) {
-    // Ofrecer mover productos a otra categoría
-    const otras = estado.categorias.filter(c => c.id !== id);
-    if (otras.length === 0) {
-      toast('No podés eliminar la única categoría que tiene productos.', 'err');
-      return;
-    }
-    const opciones = otras.map((c, i) => `${i + 1}. ${c.nombre} (${c.productos.length} prod.)`).join('\n');
-    const resp = prompt(
-      `"${cat.nombre}" tiene ${cat.productos.length} producto(s).\n\n` +
-      `¿A qué categoría querés moverlos?\n\n${opciones}\n\nEscribí el número:`
-    );
-    if (resp === null) return;
-    const idx = parseInt(resp) - 1;
-    if (isNaN(idx) || idx < 0 || idx >= otras.length) {
-      toast('Número inválido, operación cancelada.', 'err');
-      return;
-    }
-    const destino = otras[idx];
-    destino.productos.push(...cat.productos);
-    toast(`${cat.productos.length} producto(s) movido(s) a "${destino.nombre}"`);
-  } else {
-    if (!confirm(`¿Eliminar la categoría vacía "${cat.nombre}"?`)) return;
+    toast(`Primero eliminá o mové los ${cat.productos.length} producto(s) de "${cat.nombre}" antes de eliminarla.`, 'err');
+    return;
   }
 
-  estado.categorias = estado.categorias.filter(c => c.id !== id);
-  if (activa === id) activa = estado.categorias.length > 0 ? estado.categorias[0].id : '__cats__';
-  guardarTodo();
-  renderTabs();
-  renderPaneles();
-  cambiarTab('__cats__');
-  toast(`Categoría "${cat.nombre}" eliminada`);
+  const doEliminar = () => {
+    estado.categorias = estado.categorias.filter(c => c.id !== id);
+    if (activa === id) activa = estado.categorias.length > 0 ? estado.categorias[0].id : '__cats__';
+    guardarTodo();
+    renderTabs();
+    renderPaneles();
+    cambiarTab('__cats__');
+    toast(`Categoría "${cat.nombre}" eliminada`);
+  };
+
+  confirmar(`¿Eliminar la categoría <strong>${cat.nombre}</strong>?<br><span style="font-size:.76rem;color:var(--muted)">Esta acción no se puede deshacer.</span>`, doEliminar);
 }
 
 // ── MODAL PRODUCTO ─────────────────────────────────────────────────
@@ -1075,11 +1077,29 @@ function formularioSucio() {
   return false;
 }
 
+// ── MINI-CONFIRM CUSTOM (evita window.confirm que Chrome puede bloquear) ──────
+function confirmar(msg, onOk) {
+  const d = document.createElement('div');
+  d.className = 'mini-confirm';
+  d.innerHTML = `
+    <div class="mini-confirm-box">
+      <p class="mini-confirm-msg">${msg}</p>
+      <div class="mini-confirm-btns">
+        <button class="btn btn-g" id="mc-no">Cancelar</button>
+        <button class="btn btn-danger" id="mc-si">Aceptar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(d);
+  d.querySelector('#mc-no').onclick  = () => d.remove();
+  d.querySelector('#mc-si').onclick  = () => { d.remove(); onOk(); };
+  // Cerrar con Escape
+  const onKey = e => { if (e.key === 'Escape') { d.remove(); document.removeEventListener('keydown', onKey); } };
+  document.addEventListener('keydown', onKey);
+}
+
 function cerrarModal() {
-  if (formularioSucio()) {
-    if (!confirm('¿Seguro que querés salir? Perderás los cambios no guardados.')) return;
-  }
   document.getElementById('modal-bg').classList.remove('open');
+  limpiarModal();
 }
 
 async function guardarProductoModal() {
@@ -1124,16 +1144,12 @@ async function guardarProductoModal() {
 
   if (!valido) return;
 
-  // Confirmación antes de guardar
-  const _cat = estado.categorias.find(c => c.id === catId);
-  const _accion = editandoId ? 'Actualizar' : 'Guardar nuevo';
-  const _precio = pNormal > 0 ? '\nPrecio: Gs. ' + pNormal.toLocaleString('es') : '';
-  if (!confirm(_accion + ' producto?\n\nNombre: ' + nombre + '\nCategoría: ' + (_cat ? _cat.nombre : catId) + _precio)) return;
-
   // ── Subir ambas imágenes en paralelo (solo las que tienen archivo nuevo)
   const { urlPrincipal, urlMuestra } = await subirAmbosSlots(nombre, catId);
   const img  = urlPrincipal || '';
   const imgm = urlMuestra   || '';
+  console.log('[guardar] urlPrincipal:', urlPrincipal, '| urlMuestra:', urlMuestra);
+  console.log('[guardar] img final:', img, '| imgm final:', imgm);
 
   const cat = estado.categorias.find(c => c.id === catId);
   if (!cat) return;
@@ -1183,11 +1199,12 @@ function eliminarProducto(catId, prodId) {
   if (!cat) return;
   const p = cat.productos.find(p => p.id === prodId);
   if (!p) return;
-  if (!confirm(`¿Eliminar "${p.nombre}"?`)) return;
-  cat.productos = cat.productos.filter(p => p.id !== prodId);
-  guardarTodo();
-  renderPaneles();
-  toast(`"${p.nombre}" eliminado`);
+  confirmar(`¿Eliminar <strong>${p.nombre}</strong>?<br><span style="font-size:.76rem;color:var(--muted)">Esta acción no se puede deshacer.</span>`, () => {
+    cat.productos = cat.productos.filter(pr => pr.id !== prodId);
+    guardarTodo();
+    renderPaneles();
+    toast(`"${p.nombre}" eliminado`);
+  });
 }
 
 // ── MUTACIONES INLINE ──────────────────────────────────────────────
@@ -1302,7 +1319,7 @@ async function guardarEnServidor() {
     }))
   };
   try {
-    const res = await fetch('/api/guardar', {
+    const res = await fetch(API_BASE + '/api/guardar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(exportData)
@@ -1365,25 +1382,37 @@ function importarJSON(ev) {
 
 function exportarJSON() {
   guardarTodo();
+  // ── Campos permitidos en config (lista explícita — sin credenciales) ──────
+  // NUNCA incluir: owncloudUrl, owncloudUser, owncloudPass, owncloudRutaBase,
+  //                owncloudLocalPath ni ningún token o ruta interna.
+  const c = estado.config;
   const exportData = {
-    config: { ...estado.config },
+    config: {
+      nombreTienda:    c.nombreTienda    || 'Atrezos & Props',
+      modoFeria:       c.modoFeria       ?? false,
+      whatsapp:        c.whatsapp        || '',
+      mensajeWhatsapp: c.mensajeWhatsapp || 'Hola! Me interesa hacer un pedido:',
+      moneda:          c.moneda          || 'Gs.',
+      telefono:        c.telefono        || '',
+    },
     categorias: estado.categorias.map(cat => ({
       id: cat.id, nombre: cat.nombre, descripcion: cat.descripcion || '',
       productos: cat.productos.map(p => ({
         id: p.id, nombre: p.nombre, descripcion: p.descripcion || '',
-        precio: p.precioNormal || 0,
+        precio:       p.precioNormal || 0,
         precioNormal: p.precioNormal || 0,
         precioFeria:  p.precioFeria  || 0,
-        stock: typeof p.stock === 'number' ? p.stock : 0,
-        imagen: p.imagen || '', imagenMuestra: p.imagenMuestra || '',
-        disponible: p.disponible !== false && p.disponible !== 0,
+        stock:        typeof p.stock === 'number' ? p.stock : 0,
+        imagen:       p.imagen        || '',
+        imagenMuestra: p.imagenMuestra || '',
+        disponible:   p.disponible !== false && p.disponible !== 0,
       }))
     }))
   };
   const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
   const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'productos.json' });
   a.click(); URL.revokeObjectURL(a.href);
-  toast('productos.json descargado — reemplazá el archivo junto a index.html', 'feria');
+  toast('productos.json descargado — copialo a la carpeta del proyecto y hacé git push', 'feria');
 }
 
 function toast(msg, tipo = '') {
@@ -1530,8 +1559,10 @@ async function subirSlot(tipo, nombreProducto, catNombre) {
   fd.append('owncloudRutaBase',   estado.config.owncloudRutaBase  || 'MiTienda/Imagenes');
 
   try {
-    const res  = await fetch('/api/upload', { method: 'POST', body: fd });
+    const res  = await fetch(API_BASE + '/api/upload', { method: 'POST', body: fd });
     const data = await res.json();
+
+    console.log('[upload] respuesta servidor:', JSON.stringify(data));
 
     if (data.ok) {
       // Éxito: imagen guardada localmente (y opcionalmente en ownCloud)
@@ -1540,6 +1571,7 @@ async function subirSlot(tipo, nombreProducto, catNombre) {
         : (estado.config.owncloudLocalPath ? ' (ownCloud: ' + (data.aviso || 'no copiado') + ')' : '');
       setSlotStatus(tipo, '✓ Guardado como WebP' + ocInfo, '');
       marcarUrlInput(cfg.urlInputId, data.url);
+      console.log('[upload] URL a guardar en producto:', data.url);
       return data.url;
 
     } else if (data.subidaOk) {
@@ -1561,7 +1593,7 @@ async function subirSlot(tipo, nombreProducto, catNombre) {
     }
 
   } catch(e) {
-    setSlotStatus(tipo, '✗ El servidor no responde. ¿Está corriendo "node server.js"?', 'error');
+    setSlotStatus(tipo, '✗ El servidor no responde. ¿Está corriendo "node admin-server.js"?', 'error');
     toast('No se pudo contactar el servidor. La URL manual se guardará si existe.', 'err');
     return leerUrlFinal(tipo);
   }
@@ -1591,7 +1623,7 @@ async function subirAmbosSlots(nombreProducto, catId) {
       return;
     }
     try {
-      const res  = await fetch('/api/probar-owncloud', {
+      const res  = await fetch(API_BASE + '/api/probar-owncloud', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ owncloudLocalPath: localPath, owncloudRutaBase: rutaBase })
@@ -1611,7 +1643,7 @@ async function subirAmbosSlots(nombreProducto, catId) {
         : '<div style="padding:.7rem 1rem;background:#fdecea;color:var(--danger);font-size:.78rem;border-bottom:1px solid #f0d0ce"><strong>❌ Hay un problema con la ruta configurada.</strong> Verificá los pasos abajo.</div>';
       el.innerHTML = resumen + htmlPasos;
     } catch(e) {
-      el.innerHTML = '<div style="padding:.7rem 1rem;background:#fdecea;color:var(--danger);font-size:.78rem">❌ No se pudo conectar con el servidor. ¿Está corriendo "node server.js"?</div>';
+      el.innerHTML = '<div style="padding:.7rem 1rem;background:#fdecea;color:var(--danger);font-size:.78rem">❌ No se pudo conectar con el servidor. ¿Está corriendo "node admin-server.js"?</div>';
     }
     btn.disabled = false; btn.textContent = '☁ Probar carpeta ownCloud';
   }
@@ -1623,14 +1655,14 @@ async function subirAmbosSlots(nombreProducto, catId) {
     el.style.display = 'block';
     el.innerHTML = '<div style="padding:.7rem 1rem;color:var(--muted);font-size:.76rem">Verificando servidor…</div>';
     try {
-      const res = await fetch('/api/productos');
+      const res = await fetch(API_BASE + '/api/productos');
       if (res.ok) {
-        el.innerHTML = `<div style="padding:.7rem 1rem;background:#eef4eb;color:var(--verde);font-size:.78rem">✅ Servidor corriendo correctamente en http://localhost:3000</div>`;
+        el.innerHTML = `<div style="padding:.7rem 1rem;background:#eef4eb;color:var(--verde);font-size:.78rem">✅ admin-server.js corriendo en http://localhost:3333</div>`;
       } else {
         throw new Error('HTTP ' + res.status);
       }
     } catch(e) {
-      el.innerHTML = `<div style="padding:.7rem 1rem;background:#fdecea;color:var(--danger);font-size:.78rem">❌ Servidor no responde. Abrí una terminal en la carpeta del proyecto y ejecutá: <code>node server.js</code></div>`;
+      el.innerHTML = `<div style="padding:.7rem 1rem;background:#fdecea;color:var(--danger);font-size:.78rem">❌ Servidor no responde. Ejecutá <code>ARRANCAR-ADMIN.bat</code> o en terminal: <code>node admin-server.js</code></div>`;
     }
     btn.disabled = false; btn.textContent = '🔌 Probar servidor';
   }
@@ -1650,7 +1682,7 @@ async function subirAmbosSlots(nombreProducto, catId) {
       <style>@keyframes spin{to{transform:rotate(360deg)}}</style>`;
 
     try {
-      const res  = await fetch('/api/probar-owncloud', {
+      const res  = await fetch(API_BASE + '/api/probar-owncloud', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1740,6 +1772,54 @@ cargarSiteConfigDesdeServidor().then(() => {
   // Re-renderizar el panel Sitio si estaba activo
   if (activa === '__sitio__') { renderPaneles(); cambiarTab('__sitio__'); }
 });
+
+// ── Cuando el servidor local está corriendo, cargar productos.json desde disco ──
+// Esto sincroniza el estado con el JSON real (en lugar de depender solo de localStorage).
+if (IS_LOCAL) {
+  (async () => {
+    try {
+      const res = await fetch(API_BASE + '/api/productos');
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data || !data.categorias || !Array.isArray(data.categorias)) return;
+
+      // Asegurar campo stock en todos los productos
+      data.categorias.forEach(cat =>
+        cat.productos.forEach(p => {
+          if (typeof p.stock === 'undefined') p.stock = p.disponible ? 999 : 0;
+          p.precioNormal = p.precioNormal || p.precio || 0;
+          p.precioFeria  = p.precioFeria  || 0;
+        })
+      );
+
+      estado.categorias = data.categorias;
+      if (data.config) estado.config = { ...estado.config, ...data.config };
+      activa = estado.categorias.length > 0 ? estado.categorias[0].id : '__cats__';
+      persistir();
+      renderTabs();
+      renderPaneles();
+      cambiarTab(activa);
+    } catch {
+      // Servidor no disponible — usar localStorage (modo sin servidor)
+    }
+  })();
+}
+
+// Banner de aviso cuando se abre en Netlify (no localmente)
+if (!IS_LOCAL) {
+  const aviso = document.createElement('div');
+  aviso.style.cssText = [
+    'position:fixed', 'top:0', 'left:0', 'right:0', 'z-index:9999',
+    'background:#b06030', 'color:#fff', 'text-align:center',
+    'padding:.55rem 1rem', 'font-size:.8rem', 'font-family:Jost,sans-serif',
+    'letter-spacing:.02em',
+  ].join(';');
+  aviso.innerHTML = '⚠ Panel de edición solo disponible en tu PC — ejecutá <strong>ARRANCAR-ADMIN.bat</strong> para administrar productos';
+  document.body.prepend(aviso);
+  // Empujar el nav para que no quede tapado
+  const nav = document.querySelector('nav');
+  if (nav) nav.style.top = aviso.offsetHeight + 'px';
+}
 </script>
 </body>
 </html>
