@@ -245,7 +245,7 @@ function apiGetProductos(res) {
   }
 }
 
-// POST /api/guardar → escribe productos.json de forma segura (sin credenciales)
+// POST /api/guardar → escribe productos.json localmente Y lo sube a ownCloud
 async function apiGuardar(req, res) {
   try {
     const body = await readBodyJSON(req);
@@ -256,7 +256,7 @@ async function apiGuardar(req, res) {
 
     const c = body.config || {};
 
-    // Lista blanca de campos seguros — NUNCA se guardan credenciales ownCloud aquí
+    // Solo campos seguros para guardar localmente (sin credenciales)
     const safeData = {
       config: {
         nombreTienda:    c.nombreTienda    || 'Atrezos & Props',
@@ -269,8 +269,34 @@ async function apiGuardar(req, res) {
       categorias: body.categorias,
     };
 
+    // 1. Guardar localmente
     writeJsonAtomic(PATH_PRODUCTOS, safeData);
-    jsonRes(res, 200, { ok: true });
+    console.log(`[guardar] ✓ productos.json local actualizado`);
+
+    // 2. Subir a ownCloud para que el catálogo en Netlify lo lea
+    const ocUrl  = (c.owncloudUrl      || '').trim();
+    const ocUser = (c.owncloudUser     || '').trim();
+    const ocPass = (c.owncloudPass     || '').trim();
+    const ocBase = (c.owncloudRutaBase || '').trim();
+
+    if (ocUrl && ocUser && ocPass && ocBase) {
+      try {
+        const davBase  = ocUrl.replace(/\/$/, '');
+        const rutaBase = '/' + ocBase.replace(/^\/|\/$/g, '');
+        // productos.json va una carpeta arriba de la carpeta de imágenes
+        const rutaJson = rutaBase.replace(/\/[^/]+$/, '') + '/productos.json';
+
+        const jsonBuffer = Buffer.from(JSON.stringify(safeData, null, 2), 'utf8');
+        await davPut(davBase, ocUser, ocPass, rutaJson, jsonBuffer, 'application/json');
+        console.log(`[guardar] ✓ productos.json subido a ownCloud: ${rutaJson}`);
+        return jsonRes(res, 200, { ok: true, owncloudSincronizado: true });
+      } catch (e) {
+        console.warn('[guardar] ⚠ No se pudo subir a ownCloud:', e.message);
+        return jsonRes(res, 200, { ok: true, owncloudSincronizado: false, aviso: e.message });
+      }
+    }
+
+    jsonRes(res, 200, { ok: true, owncloudSincronizado: false });
   } catch (e) {
     jsonRes(res, 500, { ok: false, error: e.message });
   }

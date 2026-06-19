@@ -97,9 +97,11 @@ nav {
 .search-input::placeholder { color: #bbb; }
 .filters {
   display: flex; gap: 0; overflow-x: auto;
-  scrollbar-width: none; flex: 1;
+  scrollbar-width: thin; scrollbar-color: var(--arena) transparent; flex: 1;
 }
-.filters::-webkit-scrollbar { display: none; }
+.filters::-webkit-scrollbar { height: 3px; }
+.filters::-webkit-scrollbar-thumb { background: var(--arena); border-radius: 2px; }
+.filters::-webkit-scrollbar-track { background: transparent; }
 .filter-btn {
   padding: 14px 20px; font-size: 0.74rem; font-weight: 500;
   letter-spacing: 0.07em; text-transform: uppercase;
@@ -305,6 +307,9 @@ main { max-width: 1280px; margin: 0 auto; padding: 48px 40px 100px; }
   .toolbar { padding: 0 12px; flex-wrap: wrap; }
   .search-wrap { border-right: none; padding-right: 0; border-bottom: 1px solid var(--arena); width: 100%; }
   .search-input { width: 100%; }
+  .filters { flex-wrap: wrap; overflow-x: visible; scrollbar-width: none; width: 100%; }
+  .filters::-webkit-scrollbar { display: none; }
+  .filter-btn { padding: 10px 14px; font-size: 0.72rem; }
   main { padding: 28px 16px 80px; }
   .products-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
   .category-title { font-size: 1.5rem; }
@@ -410,8 +415,8 @@ let siteCfg = {
 
 // ══════════════════════════════════════════════════════════════════
 //  CARGA DE DATOS
-//  productos: localStorage → /api/productos → fallback
-//  siteConfig: localStorage → /api/config    → defaults
+//  productos: localStorage → /productos.json (repo estático) → fallback
+//  siteConfig: localStorage → /siteConfig.json (repo estático) → defaults
 // ══════════════════════════════════════════════════════════════════
 
 async function cargarSiteCfg() {
@@ -426,7 +431,7 @@ async function cargarSiteCfg() {
 
   // 2. ownCloud en segundo plano (async, sin bloquear render)
   try {
-    const res = await fetch('/api/config');
+    const res = await fetch('/siteConfig.json');
     if (!res.ok) return;
     const json = await res.json();
     if (json && typeof json === 'object') {
@@ -453,9 +458,9 @@ async function cargarDatos() {
     }
   } catch(e) {}
 
-  // 2. Intentar /api/productos (Netlify function → ownCloud)
+  // 2. Intentar /productos.json (archivo estático en repo)
   try {
-    const res = await fetch('/api/productos');
+    const res = await fetch('/productos.json');
     if (!res.ok) throw new Error();
     const json = await res.json();
     if (json && json.categorias && json.config) {
