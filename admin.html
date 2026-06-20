@@ -603,6 +603,66 @@ async function guardarSiteConfig(btn) {
   btn.textContent = texto;
 }
 
+// Guarda la config de la tienda (nombre, teléfono, moneda, ownCloud, etc.)
+async function guardarConfig(btn) {
+  const texto = btn.textContent;
+  btn.disabled = true; btn.textContent = '⏳ Guardando…';
+  const estadoEl = document.getElementById('cfg-estado');
+
+  persistir();
+  const resultado = await guardarEnServidor();
+
+  if (resultado && resultado.ok !== false) {
+    toast('Configuración guardada ✓');
+    if (estadoEl) estadoEl.textContent = 'Guardado en ownCloud ✓';
+  } else {
+    toast('Guardado local — verificá conexión ownCloud', 'err');
+    if (estadoEl) estadoEl.textContent = 'Guardado local (ownCloud no disponible)';
+  }
+
+  btn.disabled = false; btn.textContent = texto;
+}
+
+// Guarda el panel WA: siteConfig (asesores) + config de tienda (whatsapp/mensaje)
+async function guardarWA(btn) {
+  const texto  = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳ Guardando…';
+  const estadoEl = document.getElementById('sc-wa-estado');
+
+  // 1. Persistir config de tienda en localStorage
+  persistir();
+
+  // 2. Guardar productos.json (contiene whatsapp/mensajeWhatsapp)
+  const resProductos = await guardarEnServidor();
+
+  // 3. Guardar siteConfig (asesores, seleccionAsesorActivo, etc.)
+  localStorage.setItem(SC_SK, JSON.stringify(siteConfig));
+  let okConfig = false;
+  try {
+    const res = await fetch(API_BASE + '/api/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...siteConfig, config: { ...estado.config } }),
+    });
+    const data = await res.json();
+    okConfig = !!data.ok;
+  } catch {}
+
+  const okProductos = resProductos && resProductos.ok !== false;
+
+  if (okProductos && okConfig) {
+    toast('WhatsApp guardado en ownCloud ☁');
+    if (estadoEl) estadoEl.textContent = 'Sincronizado con ownCloud ✓';
+  } else {
+    toast('Guardado local — verificá conexión ownCloud', 'err');
+    if (estadoEl) estadoEl.textContent = 'Guardado local (ownCloud no disponible)';
+  }
+
+  btn.disabled = false;
+  btn.textContent = texto;
+}
+
 function _mergeSC(base, src) {
   return {
     ...base, ...src,
@@ -803,6 +863,7 @@ function renderPaneles() {
   panelSitio.className = `panel${'__sitio__' === activa ? ' active' : ''}`;
   panelSitio.dataset.key = '__sitio__';
   const sc = siteConfig;
+  const c  = estado.config;
   panelSitio.innerHTML = `
     <div class="config-form">
       <h3>🌐 Control Visual del Catálogo</h3>
@@ -926,11 +987,32 @@ function renderPaneles() {
   panelWa.dataset.key = '__wa__';
   panelWa.innerHTML = `
     <div class="config-form">
-      <h3>📱 Asesores de WhatsApp</h3>
+      <h3>📱 WhatsApp</h3>
       <p style="font-size:.76rem;color:var(--muted);margin-bottom:1.2rem">
-        Configurá asesores y asignales categorías, productos o promociones.
-        El cliente elige con quién hablar antes de abrir WhatsApp.
+        Número principal de la tienda y configuración de asesores de atención.
       </p>
+
+      <!-- ── Número principal ── -->
+      <div style="border:1px solid var(--border);border-radius:5px;overflow:hidden;margin-bottom:.8rem">
+        <div style="padding:.75rem 1rem;background:var(--w);border-bottom:1px solid var(--border)">
+          <div style="font-size:.85rem;font-weight:500">📞 Número principal de la tienda</div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:.15rem">Se usa cuando la selección de asesores está desactivada, o como fallback</div>
+        </div>
+        <div style="padding:.85rem 1rem;display:grid;grid-template-columns:1fr 1fr;gap:.7rem">
+          <div class="field">
+            <label class="field-lbl">WhatsApp (con código de país)</label>
+            <input type="text" class="field-input" value="${escHtml(c.whatsapp||'')}"
+              oninput="cambiarConfig('whatsapp',this.value)"
+              placeholder="Ej: 595981234567">
+          </div>
+          <div class="field">
+            <label class="field-lbl">Mensaje de bienvenida</label>
+            <input type="text" class="field-input" value="${escHtml(c.mensajeWhatsapp||'')}"
+              oninput="cambiarConfig('mensajeWhatsapp',this.value)"
+              placeholder="Ej: Hola! Me interesa hacer un pedido:">
+          </div>
+        </div>
+      </div>
 
       <!-- ── Selección de asesor ON/OFF ── -->
       <div style="border:1px solid var(--border);border-radius:5px;overflow:hidden;margin-bottom:.8rem">
@@ -990,7 +1072,7 @@ function renderPaneles() {
 
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.6rem">
         <span id="sc-wa-estado" style="font-size:.73rem;color:var(--muted)">Sin cambios pendientes</span>
-        <button class="btn btn-p" onclick="guardarSiteConfig(this)">☁ Guardar en ownCloud</button>
+        <button class="btn btn-p" onclick="guardarWA(this)">☁ Guardar en ownCloud</button>
       </div>
     </div>`;
   wrap.appendChild(panelWa);
@@ -1252,7 +1334,6 @@ function renderPaneles() {
   const panelConfig = document.createElement('div');
   panelConfig.className = `panel${'__config__' === activa ? ' active' : ''}`;
   panelConfig.dataset.key = '__config__';
-  const c = estado.config;
   panelConfig.innerHTML = `
     <div class="config-form">
       <h3>Configuración de la Tienda</h3>
@@ -1266,16 +1347,8 @@ function renderPaneles() {
           <input type="text" class="config-input" value="${c.telefono||''}" oninput="cambiarConfig('telefono',this.value)">
         </div>
         <div class="field">
-          <label>WhatsApp (con código país)</label>
-          <input type="text" class="config-input" value="${c.whatsapp||''}" oninput="cambiarConfig('whatsapp',this.value)">
-        </div>
-        <div class="field">
           <label>Moneda</label>
           <input type="text" class="config-input" value="${c.moneda||'Gs.'}" oninput="cambiarConfig('moneda',this.value)">
-        </div>
-        <div class="field">
-          <label>Mensaje de WhatsApp</label>
-          <input type="text" class="config-input" value="${c.mensajeWhatsapp||''}" oninput="cambiarConfig('mensajeWhatsapp',this.value)">
         </div>
         <div class="field">
           <label>Modo Feria</label>
@@ -1330,11 +1403,15 @@ function renderPaneles() {
       </div>
 
       <div style="display:flex;align-items:center;gap:.6rem;margin-top:1rem;flex-wrap:wrap">
-        <button class="btn btn-o btn-sm" onclick="probarServidor(this)">🔌 Probar servidor</button>
-        <button class="btn btn-p btn-sm" onclick="probarConexionOwnCloud(this)">☁ Probar conexión ownCloud</button>
+        <button class="btn btn-p btn-sm" onclick="probarOwnCloud(this)">☁ Probar conexión ownCloud</button>
         <span style="font-size:.72rem;color:var(--muted)">Guardá los cambios antes de probar.</span>
       </div>
-      <div id="servidor-test-result" style="display:none;margin-top:.8rem;border:1px solid var(--border);border-radius:4px;overflow:hidden;font-size:.75rem"></div>
+      <div id="oc-test-result" style="margin-top:.8rem;border:1px solid var(--border);border-radius:4px;overflow:hidden;font-size:.75rem"></div>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.6rem;margin-top:.8rem">
+      <span id="cfg-estado" style="font-size:.73rem;color:var(--muted)">Sin cambios pendientes</span>
+      <button class="btn btn-p" onclick="guardarConfig(this)">💾 Guardar configuración</button>
     </div>`;
   wrap.appendChild(panelConfig);
 
@@ -1937,16 +2014,22 @@ function setSlotStatus(tipo, msg, claseSlot = '') {
 // ══════════════════════════════════════════════════════════════════════════════
 
 async function probarOwnCloud(btn) {
+  const textoOriginal = btn.textContent;
   btn.disabled = true;
   btn.textContent = '⏳ Probando…';
   const resultEl = document.getElementById('oc-test-result');
-  resultEl.innerHTML = '';
+  if (resultEl) resultEl.innerHTML = '';
 
   try {
     const res = await fetch(API_BASE + '/api/probar-owncloud', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ config: estado.config }),
+      body: JSON.stringify({
+        owncloudUrl:      estado.config.owncloudUrl      || '',
+        owncloudUser:     estado.config.owncloudUser     || '',
+        owncloudPass:     estado.config.owncloudPass     || '',
+        owncloudRutaBase: estado.config.owncloudRutaBase || '/MiTienda/Imagenes/',
+      }),
     });
     const data = await res.json();
 
@@ -1988,10 +2071,10 @@ async function probarOwnCloud(btn) {
         </div>`;
     }
 
-    resultEl.innerHTML = resumen + htmlUrl + htmlPasos;
+    if (resultEl) resultEl.innerHTML = resumen + htmlUrl + htmlPasos;
 
   } catch(e) {
-    resultEl.innerHTML = `<div style="padding:.7rem 1rem;color:var(--danger);font-size:.76rem">
+    if (resultEl) resultEl.innerHTML = `<div style="padding:.7rem 1rem;color:var(--danger);font-size:.76rem">
       <strong>❌ No se pudo conectar</strong><br>
       <span style="color:var(--muted)">Verificá configuración ownCloud.</span><br>
       <span style="font-size:.68rem;color:#bbb;margin-top:.3rem;display:block">Error: ${e.message}</span>
@@ -1999,7 +2082,7 @@ async function probarOwnCloud(btn) {
   }
 
   btn.disabled = false;
-  btn.textContent = '☁ Probar conexión ownCloud';
+  btn.textContent = textoOriginal;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

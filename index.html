@@ -1226,6 +1226,9 @@ function actualizarCarritoUI() {
   const footerEl  = document.querySelector('.cart-footer');
   const totalRowEl = document.getElementById('cart-total-row');
 
+  // Mostrar/ocultar footer con botón WA
+  if (footerEl) footerEl.style.display = carrito.length > 0 ? '' : 'none';
+
   // Limpiar totales dinámicos previos
   ['cart-descuento-row','cart-total-final'].forEach(id => {
     const el = document.getElementById(id);
