@@ -61,6 +61,55 @@ nav {
 .cart-count.bump { animation: bump 0.3s ease; }
 @keyframes bump { 0%,100%{transform:scale(1)} 50%{transform:scale(1.4)} }
 
+/* ── BANNERS HERO PROMOCIONALES ── */
+.hero-banner-item {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  background: linear-gradient(135deg, var(--bosque), #3a4d34);
+  color: #fff;
+  text-align: center;
+  padding: 40px 24px;
+}
+.hero-banner-item.has-img { color: #fff; }
+.hero-banner-bg {
+  position: absolute;
+  inset: 0;
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+  opacity: .45;
+}
+.hero-banner-content { position: relative; z-index: 1; max-width: 680px; }
+.hero-banner-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 400; font-style: italic;
+  margin-bottom: .4rem; line-height: 1.2;
+}
+.hero-banner-subtitle { font-size: .9rem; opacity: .9; margin-bottom: .6rem; }
+.hero-banner-text { font-size: .82rem; opacity: .8; margin-bottom: 1.2rem; }
+.hero-banner-btn {
+  display: inline-block;
+  padding: 10px 28px;
+  background: #fff;
+  color: var(--bosque);
+  border-radius: 4px;
+  font-size: .82rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity .2s;
+  letter-spacing: .04em;
+}
+.hero-banner-btn:hover { opacity: .85; }
+@media(max-width:600px) {
+  .hero-banner-item { min-height: 160px; padding: 28px 16px; }
+}
+
 /* ── FERIA BANNER ── */
 .feria-banner {
   background: linear-gradient(135deg, var(--bosque), #3a4d34);
@@ -78,6 +127,9 @@ nav {
   display: flex;
   align-items: stretch;
   gap: 0;
+  position: sticky;
+  top: var(--nav-h, 57px);
+  z-index: 190;
 }
 .search-wrap {
   display: flex;
@@ -221,8 +273,8 @@ main { max-width: 1280px; margin: 0 auto; padding: 48px 40px 100px; }
 }
 .add-btn.agregar { background: var(--sage); color: #fff; }
 .add-btn.agregar:hover { background: var(--bosque); }
-.add-btn.interesa { background: var(--blanco); color: var(--bosque); border: 1.5px solid var(--bosque); }
-.add-btn.interesa:hover { background: var(--bosque); color: #fff; }
+.add-btn.interesa { background: var(--bosque); color: #fff; border: 1.5px solid var(--bosque); }
+.add-btn.interesa:hover { background: #3a4d34; border-color: #3a4d34; }
 .add-btn:disabled { background: var(--arena); color: #999; cursor: default; }
 
 /* ── CARRITO PANEL ── */
@@ -317,6 +369,69 @@ main { max-width: 1280px; margin: 0 auto; padding: 48px 40px 100px; }
 @media (max-width: 380px) {
   .products-grid { grid-template-columns: 1fr; }
 }
+
+/* ── ASESOR MODAL ── */
+.asesor-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.52);
+  z-index: 350; opacity: 0; pointer-events: none; transition: opacity .25s;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.asesor-overlay.open { opacity: 1; pointer-events: all; }
+.asesor-modal {
+  background: var(--blanco); border-radius: 12px;
+  width: 100%; max-width: 380px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.22);
+  overflow: hidden; transform: scale(.96); transition: transform .25s;
+}
+.asesor-overlay.open .asesor-modal { transform: scale(1); }
+.asesor-modal-hdr {
+  padding: 18px 20px 14px; border-bottom: 1px solid var(--arena);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.asesor-modal-hdr h3 {
+  font-family: 'Cormorant Garamond', serif; font-size: 1.08rem;
+  font-weight: 400; font-style: italic; color: var(--bosque);
+}
+.asesor-list { padding: 10px 14px; max-height: 340px; overflow-y: auto; }
+.asesor-item {
+  display: flex; align-items: center; gap: 12px; padding: 11px 12px;
+  border-radius: 8px; cursor: pointer; border: 1.5px solid var(--arena);
+  margin-bottom: 8px; transition: all .2s; background: var(--blanco);
+}
+.asesor-item:last-child { margin-bottom: 0; }
+.asesor-item:hover { border-color: #25d366; background: #f0fff5; }
+.asesor-avatar {
+  width: 42px; height: 42px; border-radius: 50%; background: var(--crema);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .85rem; font-weight: 600; flex-shrink: 0;
+  border: 1.5px solid var(--arena); overflow: hidden; color: var(--bosque);
+}
+.asesor-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.asesor-info { flex: 1; min-width: 0; }
+.asesor-nombre { font-size: .88rem; font-weight: 500; color: var(--negro); }
+.asesor-sub { font-size: .72rem; color: #888; margin-top: 2px; }
+.asesor-wa-badge {
+  font-size: .68rem; font-weight: 600; background: #e6faf0; color: #1ebe5d;
+  padding: 2px 8px; border-radius: 20px; flex-shrink: 0;
+}
+.asesor-modal-footer { padding: 8px 14px 14px; text-align: center; }
+.asesor-skip {
+  background: none; border: none; font-size: .76rem; color: #aaa;
+  cursor: pointer; font-family: 'Jost', sans-serif; padding: 4px 8px;
+  transition: color .15s;
+}
+.asesor-skip:hover { color: #666; }
+
+/* ── WA INLINE EN TARJETA ── */
+.wa-card-btn {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: #25d366; border: none; cursor: pointer;
+  display: none; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: background .2s;
+}
+.wa-card-btn:hover { background: #1ebe5d; }
+.wa-card-btn svg { fill: #fff; width: 14px; height: 14px; }
+.wa-card-btn.visible { display: flex; }
 </style>
 </head>
 <body>
@@ -339,6 +454,9 @@ main { max-width: 1280px; margin: 0 auto; padding: 48px 40px 100px; }
   <p>Consultá por combos y descuentos adicionales</p>
 </div>
 
+<!-- Banners promocionales (gestionados desde admin → Diseño) -->
+<div id="banners-hero-container"></div>
+
 <div class="toolbar">
   <div class="search-wrap">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -354,6 +472,17 @@ main { max-width: 1280px; margin: 0 auto; padding: 48px 40px 100px; }
     <p>No encontramos productos con esa búsqueda</p>
   </div>
 </main>
+
+<!-- Sección info contacto (oculta por defecto, activable desde admin → Diseño) -->
+<section id="info-contacto-section" style="display:none">
+  <div style="max-width:1200px;margin:0 auto;padding:48px 40px;text-align:center">
+    <h2 class="contact-section-title" style="font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:400;color:var(--bosque);margin-bottom:.5rem">Contactanos</h2>
+    <p class="contact-section-desc" style="font-size:.9rem;color:#888;margin-bottom:2rem">Estamos para ayudarte a elegir los accesorios perfectos para tu producción fotográfica.</p>
+    <div style="display:flex;justify-content:center;gap:2rem;flex-wrap:wrap" id="contact-info-items">
+      <!-- populated by renderInfoContacto() -->
+    </div>
+  </div>
+</section>
 
 <!-- CARRITO -->
 <div class="cart-overlay" id="cart-overlay" onclick="cerrarCarrito()"></div>
@@ -375,6 +504,20 @@ main { max-width: 1280px; margin: 0 auto; padding: 48px 40px 100px; }
   </div>
 </div>
 
+<!-- ── ASESOR MODAL ── -->
+<div class="asesor-overlay" id="asesor-overlay" onclick="if(event.target===this)cerrarModalAsesor()">
+  <div class="asesor-modal">
+    <div class="asesor-modal-hdr">
+      <h3>¿Con quién querés hablar?</h3>
+      <button class="close-btn" onclick="cerrarModalAsesor()">✕</button>
+    </div>
+    <div class="asesor-list" id="asesor-list"></div>
+    <div class="asesor-modal-footer">
+      <button class="asesor-skip" onclick="continuarSinAsesor()">Continuar sin elegir asesor</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -383,6 +526,14 @@ main { max-width: 1280px; margin: 0 auto; padding: 48px 40px 100px; }
 // ══════════════════════════════════════════════════════════════════
 const SK    = 'ap_productos_v2';
 const SC_SK = 'ap_siteconfig_v1'; // siteConfig.json (capa CMS)
+
+// Mantiene --nav-h actualizado para que .toolbar sticky quede justo debajo del nav
+function actualizarNavH() {
+  const nav = document.querySelector('nav');
+  if (nav) document.documentElement.style.setProperty('--nav-h', nav.offsetHeight + 'px');
+}
+actualizarNavH();
+window.addEventListener('resize', actualizarNavH);
 
 // Datos de fallback (cuando no hay localStorage ni productos.json)
 const FALLBACK = {
@@ -401,6 +552,157 @@ let datos = null;
 let carrito = [];
 let categoriaActiva = 'todas';
 let terminoBusqueda = '';
+
+// ── CARRITO ID & HISTORIAL ──────────────────────────────────────────
+const CART_HISTORY_SK = 'ap_cart_history_v1';
+let carritoId = null;
+
+function _genCarritoId() {
+  return 'cart_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+}
+function iniciarCarrito() {
+  if (!carritoId) carritoId = _genCarritoId();
+}
+function resetCarritoId() { carritoId = null; }
+
+function guardarHistorialCarrito(estadoCart) {
+  if (!carritoId || !carrito.length) return;
+  try {
+    const hist = JSON.parse(localStorage.getItem(CART_HISTORY_SK) || '[]');
+    const entrada = {
+      id: carritoId,
+      productos: carrito.map(i => ({ id: i.id, nombre: i.nombre, qty: i.qty,
+        precioUnit: precioEfectivo(i, datos?.config?.modoFeria) })),
+      fecha: new Date().toISOString(),
+      estado: estadoCart
+    };
+    const idx = hist.findIndex(h => h.id === carritoId);
+    if (idx >= 0) hist[idx] = entrada; else hist.push(entrada);
+    if (hist.length > 50) hist.splice(0, hist.length - 50);
+    localStorage.setItem(CART_HISTORY_SK, JSON.stringify(hist));
+  } catch(e) {}
+}
+
+// ── ASESORES ──────────────────────────────────────────────────────────
+let _pendingWaMsg = null;
+
+function _getAsesores() {
+  return (siteCfg.asesores || []).filter(a => a.activo !== false);
+}
+function _seleccionOn() {
+  return siteCfg.seleccionAsesorActivo !== false && _getAsesores().length > 0;
+}
+function _asesorPorId(id) {
+  return (siteCfg.asesores || []).find(a => a.id === id) || null;
+}
+function _asesoresParaProducto(catId, prodId) {
+  const todos = _getAsesores();
+  if (!todos.length) return [];
+  const porProd = todos.filter(a => (a.productos || []).includes(prodId));
+  if (porProd.length) return porProd;
+  const porCat = todos.filter(a => !a.categorias?.length || a.categorias.includes(catId));
+  return porCat.length ? porCat : todos;
+}
+function _asesoresParaCarrito() {
+  const todos = _getAsesores();
+  if (!todos.length) return [];
+  const prodIds = carrito.map(i => i.id);
+  const catIds = (datos?.categorias || [])
+    .filter(c => c.productos.some(p => prodIds.includes(p.id)))
+    .map(c => c.id);
+  const porProd = todos.filter(a => prodIds.some(id => (a.productos || []).includes(id)));
+  if (porProd.length) return porProd;
+  const porCat = todos.filter(a => !a.categorias?.length || catIds.some(id => (a.categorias || []).includes(id)));
+  return porCat.length ? porCat : todos;
+}
+
+function _iniciales(nombre) {
+  return String(nombre).split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+}
+
+function abrirWhatsApp(numero, mensaje) {
+  const n = String(numero || '').replace(/\D/g, '');
+  if (!n) return;
+  window.open(`https://wa.me/${n}?text=${encodeURIComponent(mensaje)}`, '_blank');
+}
+
+function mostrarModalAsesores(mensaje, asesores) {
+  _pendingWaMsg = mensaje;
+  document.getElementById('asesor-list').innerHTML = asesores.map(a => `
+    <div class="asesor-item" onclick="elegirAsesor('${a.id}')">
+      <div class="asesor-avatar">
+        ${a.foto ? `<img src="${a.foto}" alt="${a.nombre}">` : _iniciales(a.nombre)}
+      </div>
+      <div class="asesor-info">
+        <div class="asesor-nombre">${a.nombre}</div>
+        ${a.descripcion ? `<div class="asesor-sub">${a.descripcion}</div>` : ''}
+      </div>
+      <span class="asesor-wa-badge">WhatsApp</span>
+    </div>`).join('');
+  document.getElementById('asesor-overlay').classList.add('open');
+}
+
+function elegirAsesor(asesorId) {
+  const a = _asesorPorId(asesorId);
+  cerrarModalAsesor();
+  if (a && _pendingWaMsg) {
+    abrirWhatsApp(a.telefono, _pendingWaMsg);
+    _pendingWaMsg = null;
+    guardarHistorialCarrito('enviado');
+    carrito = []; resetCarritoId();
+    actualizarCarritoUI(); cerrarCarrito();
+  }
+}
+
+function cerrarModalAsesor() {
+  document.getElementById('asesor-overlay').classList.remove('open');
+}
+
+function continuarSinAsesor() {
+  const num = datos?.config?.whatsapp;
+  const msg = _pendingWaMsg;
+  cerrarModalAsesor();
+  _pendingWaMsg = null;
+  if (num && msg) {
+    abrirWhatsApp(num, msg);
+    guardarHistorialCarrito('enviado');
+    carrito = []; resetCarritoId();
+    actualizarCarritoUI(); cerrarCarrito();
+  }
+}
+
+// Consultar UN producto por WhatsApp (botón en tarjeta)
+function consultarProductoPorWhatsApp(prodId, catId) {
+  const p = todosLosProductos().find(p => p.id === prodId);
+  if (!p) return;
+  const { config } = datos;
+  const cat = datos.categorias.find(c => c.id === catId);
+  const modoFeria = siteCfg.modoFeria ?? config.modoFeria;
+  const precio = precioEfectivo(p, modoFeria);
+  const carritoItem = carrito.find(i => i.id === prodId);
+  const qty = carritoItem ? carritoItem.qty : 1;
+  const url = window.location.origin + window.location.pathname + '#prod-' + prodId;
+
+  let msg = `Hola! Me interesa este producto:\n\n`;
+  msg += `*${p.nombre}*\n`;
+  if (cat) msg += `Categoría: ${cat.nombre}\n`;
+  if (precio > 0) msg += `Precio: ${formatPrecio(precio, config.moneda)}\n`;
+  msg += `Cantidad: ${qty}\n`;
+  msg += `\n${url}`;
+
+  if (_seleccionOn()) {
+    const asesores = _asesoresParaProducto(catId, prodId);
+    if (asesores.length === 1) {
+      abrirWhatsApp(asesores[0].telefono, msg);
+    } else if (asesores.length > 1) {
+      mostrarModalAsesores(msg, asesores);
+    } else {
+      abrirWhatsApp(config.whatsapp, msg);
+    }
+  } else {
+    abrirWhatsApp(config.whatsapp, msg);
+  }
+}
 
 // siteConfig controla la UI del catálogo (capa CMS)
 let siteCfg = {
@@ -506,28 +808,157 @@ window.addEventListener('storage', e => {
   }
 });
 
+// ── APARIENCIA: inyecta variables CSS desde siteConfig.apariencia ───
+function aplicarApariencia(sc) {
+  const a = sc.apariencia || {};
+  let el = document.getElementById('apariencia-override');
+  if (!el) {
+    el = document.createElement('style');
+    el.id = 'apariencia-override';
+    document.head.appendChild(el);
+  }
+  const vars = [];
+  if (a.colorPrincipal)   vars.push(`--bosque:${a.colorPrincipal}`);
+  if (a.colorSecundario)  vars.push(`--sage:${a.colorSecundario}`);
+  if (a.colorTexto)       vars.push(`--negro:${a.colorTexto}`);
+  if (a.colorFondo)       vars.push(`--blanco:${a.colorFondo}`);
+  if (a.colorFondo2)      vars.push(`--crema:${a.colorFondo2}`);
+
+  const size = parseInt(a.tamañoTexto) || 16;
+  const bodyFont  = a.tipografiaBody      ? `'${a.tipografiaBody}',sans-serif`          : '';
+  const headFont  = a.tipografiaHeadings  ? `'${a.tipografiaHeadings}',serif`           : '';
+
+  let css = '';
+  if (vars.length) css += `:root{${vars.join(';')}}`;
+  css += `body{font-size:${size}px}`;
+  if (bodyFont)  css += `body,.cart-btn,.filter-btn,.add-btn,.nav-contact{font-family:${bodyFont}}`;
+  if (headFont)  css += `.nav-logo,.category-title,.hero-banner-title{font-family:${headFont}}`;
+  // Color botones independiente si se configuró
+  if (a.colorBotones)     css += `.cart-btn,.add-btn.agregar,.add-btn.interesa{background:${a.colorBotones}}`;
+  if (a.colorEncabezados) css += `.nav-logo,.category-title{color:${a.colorEncabezados}}`;
+  if (a.colorEnlaces)     css += `a{color:${a.colorEnlaces}}`;
+
+  el.textContent = css;
+}
+
+// ── BANNERS HERO ──────────────────────────────────────────────────────
+function renderBanners(sc) {
+  const container = document.getElementById('banners-hero-container');
+  if (!container) return;
+
+  const ahora      = new Date();
+  const secciones  = sc.paginaInicio?.secciones || [];
+  const secBanners = secciones.find(s => s.id === 'banners_hero');
+  const visible    = !secBanners || secBanners.activa !== false;
+
+  if (!visible) { container.innerHTML = ''; return; }
+
+  const banners = (sc.banners || []).filter(b => {
+    if (!b.activo) return false;
+    const inicio = b.fechaInicio ? new Date(b.fechaInicio) : null;
+    const fin    = b.fechaFin    ? new Date(b.fechaFin)    : null;
+    if (inicio && ahora < inicio) return false;
+    if (fin    && ahora > fin)    return false;
+    // Filtro de placement
+    const pl = b.placement || 'home';
+    return pl === 'all' || pl === 'home';
+  });
+
+  if (!banners.length) { container.innerHTML = ''; return; }
+
+  container.innerHTML = banners.map(b => {
+    const hasImg = !!b.imagen;
+    return `
+    <div class="hero-banner-item${hasImg ? ' has-img' : ''}">
+      ${hasImg ? `<img class="hero-banner-bg" src="${b.imagen}" alt="" loading="lazy">` : ''}
+      <div class="hero-banner-content">
+        ${b.titulo    ? `<div class="hero-banner-title">${b.titulo}</div>` : ''}
+        ${b.subtitulo ? `<div class="hero-banner-subtitle">${b.subtitulo}</div>` : ''}
+        ${b.texto     ? `<div class="hero-banner-text">${b.texto}</div>` : ''}
+        ${b.boton && b.urlBoton
+          ? `<a href="${b.urlBoton}" class="hero-banner-btn">${b.boton}</a>`
+          : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── INFO CONTACTO ─────────────────────────────────────────────────────
+function renderInfoContacto(sc, config) {
+  const secciones     = sc.paginaInicio?.secciones || [];
+  const secContacto   = secciones.find(s => s.id === 'info_contacto');
+  const visible       = secContacto?.activa === true;
+  const section       = document.getElementById('info-contacto-section');
+  if (!section) return;
+
+  if (!visible) { section.style.display = 'none'; return; }
+  section.style.display = '';
+
+  const infoContacto = sc.infoContacto || {};
+  const items = [];
+  const tel   = infoContacto.telefono || config?.telefono || '';
+  const email = infoContacto.email    || '';
+  const dir   = infoContacto.direccion|| '';
+  const hora  = infoContacto.horario  || '';
+
+  if (tel)   items.push({ icon:'📞', label:'Teléfono', val: tel });
+  if (email) items.push({ icon:'✉', label:'Email',    val: email });
+  if (dir)   items.push({ icon:'📍', label:'Dirección',val: dir });
+  if (hora)  items.push({ icon:'🕐', label:'Horario',  val: hora });
+
+  const el = document.getElementById('contact-info-items');
+  if (el) {
+    el.innerHTML = items.length
+      ? items.map(i => `
+          <div style="background:#f8f7f5;border-radius:8px;padding:20px 28px;min-width:180px;text-align:center">
+            <div style="font-size:1.4rem;margin-bottom:.4rem">${i.icon}</div>
+            <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:#aaa;margin-bottom:.25rem">${i.label}</div>
+            <div style="font-size:.88rem;color:var(--negro);font-weight:500">${i.val}</div>
+          </div>`).join('')
+      : '<p style="color:#aaa;font-size:.82rem">Configurá el contacto desde el panel de administración.</p>';
+  }
+}
+
 // Aplica siteConfig a la UI (se puede llamar sin recargar el catálogo)
 function aplicarSiteConfig() {
   const sc = siteCfg;
+
+  // Apariencia visual
+  aplicarApariencia(sc);
 
   // modoFeria: siteConfig tiene prioridad sobre productos.json/config
   const mf = sc.modoFeria ?? (datos?.config?.modoFeria ?? false);
   document.getElementById('feria-badge').classList.toggle('visible', mf);
 
-  // Banner: usar texto de siteConfig si bannerActivo, sino el modo feria legacy
+  // Banner feria
   const bannerEl = document.getElementById('feria-banner');
-  if (sc.bannerActivo) {
+  const secBannerGlobal = (sc.paginaInicio?.secciones || []).find(s => s.id === 'banner_global');
+  const bannerGlobalActiva = !secBannerGlobal || secBannerGlobal.activa !== false;
+
+  if (bannerGlobalActiva && sc.bannerActivo) {
     bannerEl.classList.add('visible');
     const h2 = bannerEl.querySelector('h2');
     const p  = bannerEl.querySelector('p');
-    if (h2) h2.textContent = sc.textoBanner     || '¡Estamos en FERIA!';
-    if (p)  p.textContent  = sc.subtextoBanner  || '';
-  } else if (mf) {
-    // Fallback: banner por modo feria (texto original)
+    if (h2) h2.textContent = sc.textoBanner    || '¡Estamos en FERIA!';
+    if (p)  p.textContent  = sc.subtextoBanner || '';
+  } else if (bannerGlobalActiva && mf) {
     bannerEl.classList.add('visible');
   } else {
     bannerEl.classList.remove('visible');
   }
+
+  // Banners hero
+  renderBanners(sc);
+
+  // Catálogo visibility
+  const mainEl = document.querySelector('main');
+  if (mainEl) {
+    const secCatalogo = (sc.paginaInicio?.secciones || []).find(s => s.id === 'catalogo');
+    mainEl.style.display = (!secCatalogo || secCatalogo.activa !== false) ? '' : 'none';
+  }
+
+  // Info contacto
+  renderInfoContacto(sc, datos?.config);
 
   // Carrito visible / oculto
   const cartBtn = document.querySelector('.cart-btn');
@@ -607,7 +1038,7 @@ function renderCatalogo(categorias, config) {
       <h2 class="category-title"><em>${cat.nombre}</em></h2>
       <p class="category-desc">${cat.descripcion || 'Seleccioná los que te interesan y consultanos por WhatsApp.'}</p>
       <div class="products-grid">
-        ${cat.productos.map(p => renderTarjeta(p, config)).join('')}
+        ${cat.productos.map(p => renderTarjeta(p, config, cat.id)).join('')}
       </div>
     </section>
   `).join('');
@@ -684,8 +1115,7 @@ function renderEtiquetasSiteCfg(modoFeriaEfectivo) {
   return `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">${badges.join('')}</div>`;
 }
 
-function renderTarjeta(p, config) {
-  // modoFeria efectivo: siteConfig tiene prioridad
+function renderTarjeta(p, config, catId = '') {
   const modoFeria    = siteCfg.modoFeria ?? config.modoFeria ?? false;
   const carritoOn    = siteCfg.carritoVisible !== false;
   const agotado      = estaAgotado(p);
@@ -695,18 +1125,28 @@ function renderTarjeta(p, config) {
   const precioHTML   = renderPrecioBlock(p, config);
   const etiquetasHTML = !agotado ? renderEtiquetasSiteCfg(modoFeria) : '';
 
-  let btnHTML = '';
+  const waEnTarjeta = !agotado && (config.whatsapp || (siteCfg.asesores || []).length > 0);
+  const waBtnSVG = `<svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.093.539 4.062 1.485 5.772L0 24l6.382-1.473C8.044 23.447 9.99 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.87 0-3.628-.494-5.145-1.358l-.368-.212-3.791.874.907-3.695-.237-.384C2.516 15.613 2 13.863 2 12 2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>`;
+
+  let accionesHTML = '';
   if (agotado) {
-    btnHTML = `<button class="add-btn" disabled>Agotado</button>`;
-  } else if (carritoOn) {
-    btnHTML = modoFeria
-      ? `<button class="add-btn agregar" onclick="agregarAlCarrito(${p.id})">+ Agregar</button>`
-      : `<button class="add-btn interesa" onclick="agregarAlCarrito(${p.id})">♡ Me interesa</button>`;
+    accionesHTML = `<button class="add-btn" disabled>Agotado</button>`;
+  } else {
+    const waBtn = waEnTarjeta
+      ? `<button class="wa-card-btn visible" onclick="consultarProductoPorWhatsApp(${p.id},'${catId}')" title="Consultar por WhatsApp">${waBtnSVG}</button>`
+      : '';
+    if (carritoOn) {
+      const addBtn = modoFeria
+        ? `<button class="add-btn agregar" onclick="agregarAlCarrito(${p.id})">+ Agregar</button>`
+        : `<button class="add-btn interesa" onclick="agregarAlCarrito(${p.id})">♡ Me interesa</button>`;
+      accionesHTML = `<div style="display:flex;gap:6px;align-items:center">${waBtn}${addBtn}</div>`;
+    } else {
+      accionesHTML = waBtn;
+    }
   }
-  // carritoOn === false → no hay botón (solo info + precio)
 
   return `
-    <div class="card${agotado ? ' agotado' : ''}" data-nombre="${p.nombre.toLowerCase()}">
+    <div class="card${agotado ? ' agotado' : ''}" id="prod-${p.id}" data-nombre="${p.nombre.toLowerCase()}">
       ${agotado ? '<span class="agotado-badge">Sin stock</span>' : ''}
       <div class="img-container">
         <img class="img-main"   src="${imgPrincipal}" alt="${p.nombre}" loading="lazy">
@@ -719,7 +1159,7 @@ function renderTarjeta(p, config) {
         ${p.descripcion ? `<div class="card-desc">${p.descripcion}</div>` : ''}
         <div class="card-footer">
           ${precioHTML}
-          ${btnHTML}
+          ${accionesHTML}
         </div>
       </div>
     </div>`;
@@ -731,79 +1171,88 @@ function todosLosProductos() {
 }
 
 function precioEfectivo(p, modoFeriaFallback) {
-  const pNormal  = p.precioNormal || p.precio || 0;
-  const pFeria   = p.precioFeria  || 0;
-  // siteConfig.mostrarPrecios === false → no hay precio efectivo
+  const pNormal = p.precioNormal || p.precio || 0;
+  const pFeria  = p.precioFeria  || 0;
   if (siteCfg.mostrarPrecios === false) return 0;
-  // modoFeria: siteConfig tiene prioridad
   const modoFeria = siteCfg.modoFeria ?? modoFeriaFallback ?? false;
   if (modoFeria && pFeria > 0) return pFeria;
   return pNormal;
 }
 
 function stockDisponible(p) {
-  if (typeof p.stock === 'number') return p.stock;
-  return p.disponible ? 999 : 0; // boolean → ilimitado o 0
+  if (typeof p.stock === 'number') return p.stock > 0;
+  return p.disponible !== false && p.disponible !== 0;
 }
 
-function agregarAlCarrito(id) {
-  const p = todosLosProductos().find(p => p.id === id);
-  if (!p || estaAgotado(p)) return;
+function estaAgotado(p) {
+  if (typeof p.stock === 'number') return p.stock <= 0;
+  return p.disponible === false || p.disponible === 0;
+}
 
-  const stockMax = stockDisponible(p);
-  const item = carrito.find(i => i.id === id);
-  const cantActual = item ? item.qty : 0;
-
-  if (cantActual >= stockMax) {
-    mostrarToast(`Solo hay ${stockMax} unidad${stockMax !== 1 ? 'es' : ''} disponible${stockMax !== 1 ? 's' : ''}`, true);
-    return;
+function agregarAlCarrito(prodId) {
+  iniciarCarrito();
+  const prod = todosLosProductos().find(p => p.id === prodId);
+  if (!prod || estaAgotado(prod)) return;
+  const existe = carrito.find(i => i.id === prodId);
+  if (existe) {
+    existe.qty++;
+  } else {
+    carrito.push({ ...prod, qty: 1 });
   }
-
-  if (item) item.qty++;
-  else carrito.push({ ...p, qty: 1 });
   actualizarCarritoUI();
-  mostrarToast(`"${p.nombre.slice(0,30)}" agregado`);
   animarContador();
+  mostrarToast('Agregado al carrito ✓');
 }
 
-function cambiarCantidad(id, delta) {
-  const item = carrito.find(i => i.id === id);
-  if (!item) return;
-
-  if (delta > 0) {
-    const p = todosLosProductos().find(p => p.id === id);
-    if (p && item.qty >= stockDisponible(p)) {
-      mostrarToast('Llegaste al máximo de stock disponible', true);
-      return;
-    }
-  }
-
-  item.qty += delta;
-  if (item.qty <= 0) carrito = carrito.filter(i => i.id !== id);
+function cambiarCantidad(prodId, delta) {
+  const idx = carrito.findIndex(i => i.id === prodId);
+  if (idx < 0) return;
+  carrito[idx].qty += delta;
+  if (carrito[idx].qty <= 0) carrito.splice(idx, 1);
   actualizarCarritoUI();
 }
 
 function actualizarCarritoUI() {
-  const { config } = datos;
-  const modoFeria = config.modoFeria;
-  const total = carrito.reduce((s, i) => s + precioEfectivo(i, modoFeria) * i.qty, 0);
-  const count = carrito.reduce((s, i) => s + i.qty, 0);
-  document.getElementById('cart-count').textContent = count;
+  const total = carrito.reduce((s, i) => s + i.qty, 0);
+  document.getElementById('cart-count').textContent = total;
 
-  const itemsEl  = document.getElementById('cart-items');
-  const footerEl = document.getElementById('cart-footer');
+  const modoFeria = siteCfg.modoFeria ?? (datos?.config?.modoFeria ?? false);
+  const config    = datos?.config || {};
+  const precioTotal = carrito.reduce((s, i) => s + precioEfectivo(i, modoFeria) * i.qty, 0);
+  const subtotal    = carrito.reduce((s, i) => s + (i.precioNormal || i.precio || 0) * i.qty, 0);
+  const descuento   = modoFeria ? Math.max(0, subtotal - precioTotal) : 0;
 
-  if (carrito.length === 0) {
-    itemsEl.innerHTML = `<div class="cart-empty">🛒<p>Todavía no agregaste productos</p></div>`;
-    footerEl.style.display = 'none';
-    return;
+  const itemsEl   = document.getElementById('cart-items');
+  const footerEl  = document.querySelector('.cart-footer');
+  const totalRowEl = document.getElementById('cart-total-row');
+
+  // Limpiar totales dinámicos previos
+  ['cart-descuento-row','cart-total-final'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+  });
+
+  if (siteCfg.mostrarPrecios !== false && precioTotal > 0) {
+    if (descuento > 0) {
+      totalRowEl.style.display = '';
+      totalRowEl.innerHTML = `<span>Subtotal</span><span style="color:#888">${formatPrecio(subtotal, config.moneda)}</span>`;
+      totalRowEl.insertAdjacentHTML('afterend',
+        `<div class="cart-total" id="cart-descuento-row" style="font-size:.82rem">
+          <span style="color:var(--feria)">Descuento 🏷</span>
+          <span style="color:var(--feria)">- ${formatPrecio(descuento, config.moneda)}</span>
+        </div>`);
+    } else {
+      totalRowEl.style.display = 'none';
+    }
+    const totalFinal = document.createElement('div');
+    totalFinal.id = 'cart-total-final';
+    totalFinal.className = 'cart-total';
+    totalFinal.style.fontWeight = '700';
+    totalFinal.innerHTML = `<span>Total</span><span style="color:var(--bosque);font-family:'Cormorant Garamond',serif;font-size:1.1rem">${formatPrecio(precioTotal, config.moneda)}</span>`;
+    footerEl.insertBefore(totalFinal, footerEl.querySelector('.wa-order-btn'));
+  } else {
+    totalRowEl.style.display = 'none';
   }
-
-  footerEl.style.display = 'block';
-  document.getElementById('cart-panel-title').textContent = modoFeria ? 'Tu pedido' : 'Tu consulta';
-  document.getElementById('cart-total-row').style.display = modoFeria ? 'flex' : 'none';
-  document.getElementById('wa-btn-label').textContent = modoFeria ? 'Pedir por WhatsApp' : 'Consultar por WhatsApp';
-  if (modoFeria) document.getElementById('cart-total-price').textContent = formatPrecio(total, config.moneda);
 
   itemsEl.innerHTML = carrito.map(i => {
     const pe = precioEfectivo(i, modoFeria);
@@ -815,7 +1264,7 @@ function actualizarCarritoUI() {
         <div class="cart-item-name">${i.nombre}</div>
         ${pe > 0 ? `<div class="cart-item-price${esFeria ? ' feria-price' : ''}">${formatPrecio(pe, config.moneda)} c/u${esFeria ? ' 🏷' : ''}</div>` : ''}
         <div class="cart-item-controls">
-          <button class="qty-btn" onclick="cambiarCantidad(${i.id},-1)">−</button>
+          <button class="qty-btn" onclick="cambiarCantidad(${i.id},-1)">-</button>
           <span class="qty-num">${i.qty}</span>
           <button class="qty-btn" onclick="cambiarCantidad(${i.id},1)">+</button>
           <button class="remove-btn" onclick="cambiarCantidad(${i.id},-999)">Eliminar</button>
@@ -836,20 +1285,47 @@ function cerrarCarrito() {
 
 function pedirPorWhatsApp() {
   const { config } = datos;
-  const modoFeria = config.modoFeria;
-  const total = carrito.reduce((s, i) => s + precioEfectivo(i, modoFeria) * i.qty, 0);
+  const modoFeria = siteCfg.modoFeria ?? config.modoFeria;
+  const total    = carrito.reduce((s, i) => s + precioEfectivo(i, modoFeria) * i.qty, 0);
+  const subtotal = carrito.reduce((s, i) => s + (i.precioNormal || i.precio || 0) * i.qty, 0);
+  const descuento = modoFeria ? Math.max(0, subtotal - total) : 0;
   let msg;
   if (modoFeria) {
     const lineas = carrito.map(i => {
       const pe = precioEfectivo(i, modoFeria);
-      return `• ${i.qty}x ${i.nombre}${pe > 0 ? ' — ' + formatPrecio(pe * i.qty, config.moneda) : ''}`;
+      const pn = i.precioNormal || i.precio || 0;
+      const tieneDesc = pe > 0 && pn > 0 && pe < pn;
+      return '- ' + i.qty + 'x ' + i.nombre
+        + (pe > 0 ? ' -- ' + formatPrecio(pe * i.qty, config.moneda) : '')
+        + (tieneDesc ? ' (antes ' + formatPrecio(pn * i.qty, config.moneda) + ')' : '');
     }).join('\n');
-    msg = `${config.mensajeWhatsapp}\n\n${lineas}\n\n*Total: ${formatPrecio(total, config.moneda)}*`;
+    msg = config.mensajeWhatsapp + '\n\n' + lineas;
+    if (descuento > 0) msg += '\n\nSubtotal: ' + formatPrecio(subtotal, config.moneda);
+    if (descuento > 0) msg += '\nDescuento: -' + formatPrecio(descuento, config.moneda);
+    msg += '\n\nTotal: ' + formatPrecio(total, config.moneda);
   } else {
-    const lineas = carrito.map(i => `• ${i.qty}x ${i.nombre}`).join('\n');
-    msg = `Hola! Me interesan estos productos y quiero consultar precios:\n\n${lineas}\n\n¿Me podés dar más info?`;
+    const lineas = carrito.map(i => '- ' + i.qty + 'x ' + i.nombre).join('\n');
+    msg = 'Hola! Me interesan estos productos y quiero consultar precios:\n\n' + lineas + '\n\nMe podés dar mas info?';
   }
-  window.open(`https://wa.me/${config.whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
+  guardarHistorialCarrito('consultando');
+  if (_seleccionOn()) {
+    const asesores = _asesoresParaCarrito();
+    if (asesores.length === 1) {
+      abrirWhatsApp(asesores[0].telefono, msg);
+      guardarHistorialCarrito('enviado'); carrito = []; resetCarritoId();
+      actualizarCarritoUI(); cerrarCarrito();
+    } else if (asesores.length > 1) {
+      mostrarModalAsesores(msg, asesores);
+    } else {
+      abrirWhatsApp(config.whatsapp, msg);
+      guardarHistorialCarrito('enviado'); carrito = []; resetCarritoId();
+      actualizarCarritoUI(); cerrarCarrito();
+    }
+  } else {
+    abrirWhatsApp(config.whatsapp, msg);
+    guardarHistorialCarrito('enviado'); carrito = []; resetCarritoId();
+    actualizarCarritoUI(); cerrarCarrito();
+  }
 }
 
 function mostrarToast(msg, esAlerta = false) {

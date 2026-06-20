@@ -1,13 +1,13 @@
 {
-  "modoFeria": true,
-  "mostrarPrecios": true,
+  "modoFeria": false,
+  "mostrarPrecios": false,
   "bannerActivo": true,
   "textoBanner": "¡Estamos en FERIA!",
   "subtextoBanner": "Precios especiales por tiempo limitado",
   "carritoVisible": true,
   "etiquetas": {
     "oferta": false,
-    "feria": true,
+    "feria": false,
     "nuevo": false
   }
 }
