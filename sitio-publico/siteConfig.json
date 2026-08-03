@@ -9,5 +9,83 @@
     "oferta": false,
     "feria": true,
     "nuevo": false
+  },
+  "seleccionAsesorActivo": true,
+  "asesorDefecto": "",
+  "asesores": [
+    {
+      "id": "1783625579539",
+      "nombre": "Mathias Ozuna",
+      "telefono": "+595986338010",
+      "descripcion": "Te ayudo a crear a equiparte con lo mejor",
+      "foto": "https://cloud.atrezosprops.space/s/Ob0589zOWMjuSnB/download",
+      "activo": true,
+      "categorias": [],
+      "productos": [],
+      "modoFeria": true
+    },
+    {
+      "id": "1783625637410",
+      "nombre": "Diana Marecos",
+      "telefono": "+595986470630",
+      "descripcion": "Especialista en crear sets",
+      "foto": "https://cloud.atrezosprops.space/s/5KUGKP3sG26tF15/download",
+      "activo": true,
+      "categorias": [],
+      "productos": [],
+      "modoFeria": true
+    }
+  ],
+  "apariencia": {
+    "colorPrincipal": "#506549",
+    "colorSecundario": "#9CAF88",
+    "colorBotones": "#506549",
+    "colorTexto": "#1a1a1a",
+    "colorFondo": "#ffffff",
+    "colorFondo2": "#f5f0ea",
+    "colorEncabezados": "#506549",
+    "colorEnlaces": "#506549",
+    "tipografiaBody": "Jost",
+    "tipografiaHeadings": "Cormorant Garamond",
+    "tamañoTexto": "16",
+    "logoUrl": "",
+    "logoAltura": 40,
+    "logoPosicion": "izquierda"
+  },
+  "banners": [],
+  "temaActivo": null,
+  "infoContacto": {
+    "telefono": "",
+    "email": "",
+    "direccion": "",
+    "horario": ""
+  },
+  "paginaInicio": {
+    "secciones": [
+      {
+        "id": "banner_global",
+        "nombre": "Banner Global",
+        "activa": true,
+        "orden": 0
+      },
+      {
+        "id": "banners_hero",
+        "nombre": "Banners Promocionales",
+        "activa": false,
+        "orden": 1
+      },
+      {
+        "id": "catalogo",
+        "nombre": "Catálogo de Productos",
+        "activa": true,
+        "orden": 2
+      },
+      {
+        "id": "info_contacto",
+        "nombre": "Información de Contacto",
+        "activa": false,
+        "orden": 3
+      }
+    ]
   }
 }
