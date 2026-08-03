@@ -14,6 +14,14 @@
  * guardado del panel lo borraría sin querer. Este archivo nuevo no lo
  * toca nadie más, así que no hay riesgo de pisarlo.
  *
+ * Cuando alguien se registra, ADEMÁS se crea (si no existe ya un cliente
+ * con ese celular) un registro liviano en clientes.json — mismo esquema
+ * exacto que usa netlify/functions/clientes.js y admin-server.js — para
+ * que el cliente aparezca directo en la pestaña Clientes del Panel de
+ * Ventas, sin que el staff tenga que cargarlo a mano. Si ya existe un
+ * cliente con ese celular (cargado antes por el staff), no se toca —
+ * nunca se pisan datos que el staff ya cargó (dirección, notas, etc.).
+ *
  * body: { accion: 'registro', celular, nombre, pin }
  * body: { accion: 'login',    celular, pin }
  * Nunca expone pinHash/pinSalt en la respuesta.
@@ -47,12 +55,13 @@ function rutaPrivada(ocBase, nombreArchivo) {
   return rutaBase.replace(/\/[^/]+$/, '') + '/' + nombreArchivo;
 }
 
-async function leerJsonPrivado() {
+/** Lee un JSON privado cualquiera de ownCloud (genérico — lo usan clientes-auth.json y clientes.json). */
+async function leerJsonPrivadoGenerico(nombreArchivo, defaultValue) {
   const { ocUrl, ocUser, ocPass, ocBase } = ocEnv();
-  if (!ocUrl || !ocUser || !ocPass) return VACIO;
+  if (!ocUrl || !ocUser || !ocPass) return defaultValue;
   try {
     const davBase = ocUrl.replace(/\/$/, '');
-    const ruta    = rutaPrivada(ocBase, NOMBRE_ARCHIVO);
+    const ruta    = rutaPrivada(ocBase, nombreArchivo);
     // encodeURI preserva "/" pero codifica espacios — ownCloud no acepta
     // espacios crudos en el path (mismo criterio que davPut() en admin-server.js).
     const { data } = await axios.get(davBase + encodeURI(ruta), {
@@ -60,20 +69,19 @@ async function leerJsonPrivado() {
       responseType: 'text',
       validateStatus: s => s === 200,
     });
-    const parsed = JSON.parse(data);
-    return { cuentas: Array.isArray(parsed.cuentas) ? parsed.cuentas : [], actualizado: parsed.actualizado || null };
+    return JSON.parse(data);
   } catch (err) {
-    console.error('[cliente-auth] Error leyendo clientes-auth.json:', err.message);
-    return VACIO;
+    console.error(`[cliente-auth] Error leyendo ${nombreArchivo}:`, err.message);
+    return defaultValue;
   }
 }
 
-async function guardarJsonPrivado(data) {
+async function guardarJsonPrivadoGenerico(nombreArchivo, data) {
   const { ocUrl, ocUser, ocPass, ocBase } = ocEnv();
   if (!ocUrl || !ocUser || !ocPass) return { ok: false, error: 'ownCloud no configurado.' };
   try {
     const davBase = ocUrl.replace(/\/$/, '');
-    const ruta    = rutaPrivada(ocBase, NOMBRE_ARCHIVO);
+    const ruta    = rutaPrivada(ocBase, nombreArchivo);
     const json    = JSON.stringify(data, null, 2);
     await axios({
       method: 'PUT',
@@ -86,8 +94,41 @@ async function guardarJsonPrivado(data) {
     });
     return { ok: true };
   } catch (err) {
-    console.error('[cliente-auth] Error guardando clientes-auth.json:', err.message);
+    console.error(`[cliente-auth] Error guardando ${nombreArchivo}:`, err.message);
     return { ok: false, error: err.message };
+  }
+}
+
+async function leerJsonPrivado() {
+  const data = await leerJsonPrivadoGenerico(NOMBRE_ARCHIVO, VACIO);
+  return { cuentas: Array.isArray(data.cuentas) ? data.cuentas : [], actualizado: data.actualizado || null };
+}
+async function guardarJsonPrivado(data) {
+  return guardarJsonPrivadoGenerico(NOMBRE_ARCHIVO, data);
+}
+
+/**
+ * Best-effort: crea un cliente liviano en clientes.json si no existe ya
+ * uno con ese celular. Mismo esquema exacto que clientes.js/admin-server.js
+ * para que el panel lo pueda editar y volver a guardar sin perder nada.
+ * Nunca lanza — si falla, el registro de la cuenta igual se completa.
+ */
+async function sincronizarClientePublico(nombre, celular) {
+  try {
+    const data = await leerJsonPrivadoGenerico('clientes.json', { clientes: [], actualizado: null });
+    const clientes = Array.isArray(data.clientes) ? data.clientes : [];
+    if (clientes.some(c => c.celular === celular)) return; // ya existe, no se toca
+
+    const ahora = new Date().toISOString();
+    clientes.push({
+      id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+      nombre, rucCi: '', ciudad: '', direccion: '', datosEnvio: '', metodoEnvio: '',
+      celular, notas: 'Se registró solo desde la tienda web.',
+      creadoEn: ahora, actualizadoEn: ahora,
+    });
+    await guardarJsonPrivadoGenerico('clientes.json', { clientes, actualizado: ahora });
+  } catch (err) {
+    console.error('[cliente-auth] No se pudo sincronizar con clientes.json:', err.message);
   }
 }
 
@@ -162,6 +203,7 @@ exports.handler = async (event) => {
     if (!resultado.ok) {
       return { statusCode: 500, headers: HEADERS_CORS, body: JSON.stringify({ ok: false, error: resultado.error }) };
     }
+    await sincronizarClientePublico(nombre, celular); // best-effort, no bloquea la respuesta si falla
     return {
       statusCode: 200, headers: HEADERS_CORS,
       body: JSON.stringify({ ok: true, cliente: { id: nuevaCuenta.id, nombre: nuevaCuenta.nombre, celular: nuevaCuenta.celular } }),
