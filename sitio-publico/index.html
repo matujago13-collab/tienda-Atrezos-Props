@@ -761,6 +761,36 @@ main { padding: 28px 36px 100px; flex: 1; min-width: 0; }
 }
 .asesor-skip:hover { color: #666; }
 
+/* ── CLIENTE LOGIN MODAL (reusa .asesor-overlay / .asesor-modal) ── */
+.cliente-tabs { display: flex; border-bottom: 1px solid var(--arena); }
+.cliente-tab {
+  flex: 1; background: none; border: none; padding: 10px 6px; cursor: pointer;
+  font-family: 'Jost', sans-serif; font-size: .8rem; color: #999;
+  border-bottom: 2px solid transparent; transition: all .15s;
+}
+.cliente-tab.active { color: var(--bosque); border-bottom-color: var(--bosque); font-weight: 600; }
+.cliente-form { padding: 16px 20px 8px; }
+.cliente-form label {
+  display: block; font-size: .72rem; color: #888; margin-bottom: 4px; margin-top: 12px;
+}
+.cliente-form label:first-child { margin-top: 0; }
+.cliente-form input {
+  width: 100%; padding: 9px 12px; border: 1.5px solid var(--arena); border-radius: 7px;
+  font-family: 'Jost', sans-serif; font-size: .88rem; color: var(--negro); background: var(--blanco);
+}
+.cliente-form input:focus { outline: none; border-color: var(--bosque); }
+.cliente-error {
+  font-size: .74rem; color: #c0392b; margin-top: 10px; display: none;
+}
+.cliente-error.show { display: block; }
+.cliente-submit-btn {
+  width: 100%; margin-top: 16px; padding: 11px; border: none; border-radius: 7px;
+  background: var(--bosque); color: #fff; font-family: 'Jost', sans-serif;
+  font-size: .84rem; font-weight: 600; cursor: pointer; transition: opacity .15s;
+}
+.cliente-submit-btn:disabled { opacity: .6; cursor: default; }
+.cliente-submit-btn:hover:not(:disabled) { opacity: .9; }
+
 /* ── WA INLINE EN TARJETA ── */
 .wa-card-btn {
   width: 30px; height: 30px; border-radius: 50%;
@@ -785,6 +815,9 @@ main { padding: 28px 36px 100px; flex: 1; min-width: 0; }
   </div>
   <div class="nav-right">
     <span class="nav-contact" id="nav-tel"></span>
+    <button class="cart-btn" onclick="abrirCuenta()" aria-label="Mi cuenta" style="margin-right:6px">
+      👤 <span id="account-label" style="font-size:.72rem">Ingresar</span>
+    </button>
     <button class="cart-btn" onclick="abrirCarrito()" aria-label="Ver carrito">
       🛒 <span class="cart-count" id="cart-count">0</span>
     </button>
@@ -915,6 +948,33 @@ main { padding: 28px 36px 100px; flex: 1; min-width: 0; }
   </div>
 </div>
 
+<!-- ── CLIENTE LOGIN/REGISTRO MODAL ── -->
+<div class="asesor-overlay" id="cliente-overlay" onclick="if(event.target===this)cerrarModalCliente()">
+  <div class="asesor-modal">
+    <div class="asesor-modal-hdr">
+      <h3 id="cliente-modal-title">Mi cuenta</h3>
+      <button class="close-btn" onclick="cerrarModalCliente()">✕</button>
+    </div>
+    <div class="cliente-tabs">
+      <button class="cliente-tab active" id="tab-login" onclick="cambiarTabCliente('login')">Ya tengo cuenta</button>
+      <button class="cliente-tab" id="tab-registro" onclick="cambiarTabCliente('registro')">Crear cuenta</button>
+    </div>
+    <form class="cliente-form" id="cliente-form" onsubmit="return enviarFormCliente(event)">
+      <label for="cliente-nombre" id="lbl-cliente-nombre" style="display:none">Tu nombre</label>
+      <input type="text" id="cliente-nombre" placeholder="Ej: María González" style="display:none">
+      <label for="cliente-celular">Celular</label>
+      <input type="tel" id="cliente-celular" placeholder="Ej: 0981 234 567" required>
+      <label for="cliente-pin">PIN (4 a 6 dígitos)</label>
+      <input type="password" id="cliente-pin" inputmode="numeric" pattern="[0-9]{4,6}" placeholder="••••" required>
+      <div class="cliente-error" id="cliente-error"></div>
+      <button type="submit" class="cliente-submit-btn" id="cliente-submit-btn">Ingresar</button>
+    </form>
+    <div class="asesor-modal-footer">
+      <button class="asesor-skip" onclick="continuarSinCuenta()">Continuar sin cuenta</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -951,6 +1011,117 @@ let datos = null;
 let carrito = [];
 let categoriaActiva = 'todas';
 let terminoBusqueda = '';
+
+// ── CLIENTE (login liviano celular + PIN) ───────────────────────────
+const CLIENTE_SK = 'ap_cliente_v1';
+let clienteActual = null;      // { id, nombre, celular } | null
+let _cbTrasLoginCliente = null; // función a reintentar tras loguearse
+
+function cargarClienteGuardado() {
+  try {
+    const raw = localStorage.getItem(CLIENTE_SK);
+    clienteActual = raw ? JSON.parse(raw) : null;
+  } catch(e) { clienteActual = null; }
+  actualizarBotonCuenta();
+}
+function actualizarBotonCuenta() {
+  const lbl = document.getElementById('account-label');
+  if (!lbl) return;
+  lbl.textContent = clienteActual ? clienteActual.nombre.split(' ')[0] : 'Ingresar';
+}
+function abrirCuenta() {
+  if (clienteActual) {
+    if (confirm(`Hola ${clienteActual.nombre}. ¿Cerrar sesión?`)) {
+      clienteActual = null;
+      localStorage.removeItem(CLIENTE_SK);
+      actualizarBotonCuenta();
+    }
+    return;
+  }
+  abrirModalCliente();
+}
+function abrirModalCliente() {
+  document.getElementById('cliente-error').classList.remove('show');
+  document.getElementById('cliente-form').reset();
+  cambiarTabCliente('login');
+  document.getElementById('cliente-overlay').classList.add('open');
+}
+function cerrarModalCliente() {
+  document.getElementById('cliente-overlay').classList.remove('open');
+  _cbTrasLoginCliente = null;
+}
+function cambiarTabCliente(tab) {
+  const esRegistro = tab === 'registro';
+  document.getElementById('tab-login').classList.toggle('active', !esRegistro);
+  document.getElementById('tab-registro').classList.toggle('active', esRegistro);
+  document.getElementById('lbl-cliente-nombre').style.display = esRegistro ? '' : 'none';
+  document.getElementById('cliente-nombre').style.display = esRegistro ? '' : 'none';
+  document.getElementById('cliente-submit-btn').textContent = esRegistro ? 'Crear cuenta' : 'Ingresar';
+  document.getElementById('cliente-form').dataset.accion = esRegistro ? 'registro' : 'login';
+}
+async function enviarFormCliente(ev) {
+  ev.preventDefault();
+  const form = document.getElementById('cliente-form');
+  const accion  = form.dataset.accion || 'login';
+  const celular = document.getElementById('cliente-celular').value.trim();
+  const pin     = document.getElementById('cliente-pin').value.trim();
+  const nombre  = document.getElementById('cliente-nombre').value.trim();
+  const errEl   = document.getElementById('cliente-error');
+  const btn     = document.getElementById('cliente-submit-btn');
+  errEl.classList.remove('show');
+  btn.disabled = true;
+  try {
+    const resp = await fetch('/api/cliente-auth', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion, celular, pin, nombre }),
+    });
+    const data = await resp.json();
+    if (!data.ok) {
+      errEl.textContent = data.error || 'No se pudo procesar. Intentá de nuevo.';
+      errEl.classList.add('show');
+      btn.disabled = false;
+      return false;
+    }
+    clienteActual = data.cliente;
+    localStorage.setItem(CLIENTE_SK, JSON.stringify(clienteActual));
+    actualizarBotonCuenta();
+    document.getElementById('cliente-overlay').classList.remove('open');
+    const cb = _cbTrasLoginCliente; _cbTrasLoginCliente = null;
+    if (cb) cb();
+  } catch(e) {
+    errEl.textContent = 'No se pudo conectar. Revisá tu conexión e intentá de nuevo.';
+    errEl.classList.add('show');
+  }
+  btn.disabled = false;
+  return false;
+}
+function continuarSinCuenta() {
+  document.getElementById('cliente-overlay').classList.remove('open');
+  const cb = _cbTrasLoginCliente; _cbTrasLoginCliente = null;
+  if (cb) cb();
+}
+// Guarda el pedido del carrito en el panel de Ventas (pendiente de confirmar),
+// en paralelo al mensaje que se manda por WhatsApp — no bloquea ni interrumpe
+// el envío por WhatsApp si esto falla (fire-and-forget).
+function guardarPedidoPendiente() {
+  if (!carrito.length) return;
+  try {
+    const modoFeria = siteCfg.modoFeria ?? datos?.config?.modoFeria;
+    const items = carrito.map(i => ({
+      catId: i._catId, prodId: i.id, nombre: i.nombre, cantidad: i.qty,
+      precioUnit: precioEfectivo(i, modoFeria),
+    }));
+    fetch('/api/pedido-pendiente', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clienteId: clienteActual?.id || '',
+        clienteNombre: clienteActual?.nombre || '',
+        celular: clienteActual?.celular || '',
+        items,
+      }),
+    }).catch(() => {});
+  } catch(e) {}
+}
 
 // ── CARRITO ID & HISTORIAL ──────────────────────────────────────────
 const CART_HISTORY_SK = 'ap_cart_history_v1';
@@ -1048,6 +1219,7 @@ function elegirAsesor(asesorId) {
     abrirWhatsApp(a.telefono, _pendingWaMsg);
     _pendingWaMsg = null;
     guardarHistorialCarrito('enviado');
+    guardarPedidoPendiente();
     carrito = []; resetCarritoId();
     actualizarCarritoUI(); cerrarCarrito();
   }
@@ -1065,6 +1237,7 @@ function continuarSinAsesor() {
   if (num && msg) {
     abrirWhatsApp(num, msg);
     guardarHistorialCarrito('enviado');
+    guardarPedidoPendiente();
     carrito = []; resetCarritoId();
     actualizarCarritoUI(); cerrarCarrito();
   }
@@ -1917,6 +2090,11 @@ function cerrarCarrito() {
 }
 
 function pedirPorWhatsApp() {
+  if (!clienteActual) {
+    _cbTrasLoginCliente = pedirPorWhatsApp;
+    abrirModalCliente();
+    return;
+  }
   const { config } = datos;
   const modoFeria = siteCfg.modoFeria ?? config.modoFeria;
   const total    = carrito.reduce((s, i) => s + precioEfectivo(i, modoFeria) * i.qty, 0);
@@ -1945,18 +2123,18 @@ function pedirPorWhatsApp() {
     const asesores = _asesoresParaCarrito();
     if (asesores.length === 1) {
       abrirWhatsApp(asesores[0].telefono, msg);
-      guardarHistorialCarrito('enviado'); carrito = []; resetCarritoId();
+      guardarHistorialCarrito('enviado'); guardarPedidoPendiente(); carrito = []; resetCarritoId();
       actualizarCarritoUI(); cerrarCarrito();
     } else if (asesores.length > 1) {
       mostrarModalAsesores(msg, asesores);
     } else {
       abrirWhatsApp(config.whatsapp, msg);
-      guardarHistorialCarrito('enviado'); carrito = []; resetCarritoId();
+      guardarHistorialCarrito('enviado'); guardarPedidoPendiente(); carrito = []; resetCarritoId();
       actualizarCarritoUI(); cerrarCarrito();
     }
   } else {
     abrirWhatsApp(config.whatsapp, msg);
-    guardarHistorialCarrito('enviado'); carrito = []; resetCarritoId();
+    guardarHistorialCarrito('enviado'); guardarPedidoPendiente(); carrito = []; resetCarritoId();
     actualizarCarritoUI(); cerrarCarrito();
   }
 }
@@ -1974,6 +2152,7 @@ function animarContador() {
 }
 
 cargarDatos();
+cargarClienteGuardado();
 </script>
 </body>
 </html>
