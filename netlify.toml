@@ -16,3 +16,8 @@
   from = "/api/pedido-pendiente"
   to   = "/.netlify/functions/pedido-pendiente"
   status = 200
+
+[[redirects]]
+  from = "/api/actividad-reciente"
+  to   = "/.netlify/functions/actividad-reciente"
+  status = 200

@@ -116,6 +116,78 @@ nav {
   .hero-banner-item { min-height: 160px; padding: 28px 16px; }
 }
 
+/* ── MARQUEE DE URGENCIA (envío, stock bajo, descuentos, sorteo) ── */
+.urgency-marquee {
+  background: var(--bosque); overflow: hidden; white-space: nowrap;
+  position: relative; display: none;
+}
+.urgency-marquee.visible { display: block; }
+.urgency-track {
+  display: inline-flex; gap: 40px; padding: 8px 0;
+  animation: marquee 28s linear infinite; will-change: transform;
+}
+.urgency-marquee:hover .urgency-track { animation-play-state: paused; }
+.urgency-item {
+  display: inline-flex; align-items: center; gap: 10px;
+  color: #fff; font-size: 0.78rem; letter-spacing: 0.02em; white-space: nowrap;
+}
+.urgency-item .dot { opacity: 0.45; font-size: 0.6rem; }
+@keyframes marquee { from{ transform: translateX(0); } to{ transform: translateX(-50%); } }
+
+/* ── HERO DE OFERTA DESTACADA (contador + sorteo) ── */
+.oferta-hero {
+  background: linear-gradient(135deg, var(--bosque), #3a4d34);
+  color: #fff; text-align: center; padding: 36px 24px; display: none;
+}
+.oferta-hero.visible { display: block; }
+.oferta-hero-inner { max-width: 720px; margin: 0 auto; }
+.oferta-tag {
+  display: inline-block; background: rgba(255,255,255,0.16); color: #fff;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em;
+  padding: 4px 12px; border-radius: 20px; margin-bottom: 12px;
+}
+.oferta-title {
+  font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 400;
+  font-size: clamp(1.6rem, 4vw, 2.4rem); line-height: 1.2; margin-bottom: 8px;
+}
+.oferta-sub { font-size: 0.86rem; opacity: 0.85; max-width: 46ch; margin: 0 auto 18px; }
+.oferta-countdown { display: flex; gap: 10px; justify-content: center; margin-bottom: 18px; }
+.oferta-count-box {
+  background: rgba(255,255,255,0.14); border-radius: 8px;
+  padding: 8px 14px; min-width: 60px;
+}
+.oferta-count-box span { display: block; font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; line-height: 1; }
+.oferta-count-box small { display: block; font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.7; margin-top: 2px; }
+.oferta-actions { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: center; }
+.oferta-sorteo {
+  font-size: 0.78rem; font-weight: 600; color: #fff;
+  background: rgba(255,255,255,0.12); padding: 8px 16px; border-radius: 20px;
+}
+@media (max-width: 600px) {
+  .oferta-hero { padding: 26px 16px; }
+  .oferta-countdown { gap: 6px; }
+  .oferta-count-box { min-width: 50px; padding: 6px 10px; }
+}
+
+/* ── VENTAS EN VIVO (toast flotante) ── */
+.venta-toast {
+  position: fixed; bottom: 22px; left: 22px; z-index: 210;
+  background: #fff; box-shadow: var(--shadow-lg); border-radius: 10px;
+  padding: 10px 16px; display: none; align-items: center; gap: 10px;
+  max-width: 300px; font-size: 0.78rem; color: var(--negro);
+  animation: toastin 0.4s ease-out;
+}
+.venta-toast.show { display: flex; }
+.venta-toast .venta-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--sage);
+  flex-shrink: 0; animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes toastin { from{ opacity:0; transform: translateY(12px); } to{ opacity:1; transform: translateY(0); } }
+@keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:.5; } }
+@media (max-width: 600px) {
+  .venta-toast { left: 12px; bottom: 12px; max-width: calc(100vw - 24px); }
+}
+
 /* ── FERIA BANNER ── */
 .feria-banner {
   background: linear-gradient(135deg, var(--bosque), #3a4d34);
@@ -487,6 +559,23 @@ main { padding: 28px 36px 100px; flex: 1; min-width: 0; }
 .img-sample { opacity: 0; z-index: 2; }
 .card:hover .img-main   { opacity: 0; transform: scale(1.04); }
 .card:hover .img-sample { opacity: 1; }
+.card.flipped .img-main   { opacity: 0; }
+.card.flipped .img-sample { opacity: 1; }
+
+/* Foto 3 y 4 (opcionales): quedan por encima de main/sample y solo se
+   revelan al tocar/clickear (toggleFotoCard), nunca por hover, así que
+   no interfieren con el comportamiento de hover de siempre. */
+.img-extra { opacity: 0; z-index: 3; }
+.img-extra[data-idx="3"] { z-index: 4; }
+.img-extra.show { opacity: 1; }
+
+.img-container.has-multi { cursor: pointer; }
+.photo-badge {
+  position: absolute; bottom: 9px; right: 9px; z-index: 3;
+  background: rgba(26,26,26,0.55); color: #fff;
+  font-size: 0.66rem; font-weight: 600; letter-spacing: 0.02em;
+  padding: 3px 8px; border-radius: 10px; pointer-events: none;
+}
 
 /* ── CARD INFO ── */
 .card-info { padding: 14px 16px 16px; display: flex; flex-direction: column; flex: 1; }
@@ -829,6 +918,29 @@ main { padding: 28px 36px 100px; flex: 1; min-width: 0; }
   <p>Consultá por combos y descuentos adicionales</p>
 </div>
 
+<!-- Marquee de urgencia: envío, stock bajo, descuentos por categoría, sorteo -->
+<div class="urgency-marquee" id="urgency-marquee">
+  <div class="urgency-track" id="urgency-track"></div>
+</div>
+
+<!-- Hero de oferta destacada: contador + explorar + aviso de sorteo -->
+<section class="oferta-hero" id="oferta-hero">
+  <div class="oferta-hero-inner">
+    <span class="oferta-tag" id="oferta-tag">FERIA DE DESCUENTOS</span>
+    <h1 class="oferta-title" id="oferta-title">Ofertas por tiempo limitado</h1>
+    <p class="oferta-sub" id="oferta-sub">Stock limitado — cuando se agota una unidad, no vuelve a esta oferta.</p>
+    <div class="oferta-countdown" id="oferta-countdown" role="timer" aria-label="Tiempo restante de la oferta">
+      <div class="oferta-count-box"><span id="cd-h">00</span><small>Horas</small></div>
+      <div class="oferta-count-box"><span id="cd-m">00</span><small>Min</small></div>
+      <div class="oferta-count-box"><span id="cd-s">00</span><small>Seg</small></div>
+    </div>
+    <div class="oferta-actions">
+      <a href="#catalog" class="hero-banner-btn" onclick="explorarCatalogo(event)">Explorar ofertas</a>
+      <span class="oferta-sorteo" id="oferta-sorteo" style="display:none"></span>
+    </div>
+  </div>
+</section>
+
 <!-- Banners promocionales (gestionados desde admin → Diseño) -->
 <div id="banners-hero-container"></div>
 
@@ -927,6 +1039,18 @@ main { padding: 28px 36px 100px; flex: 1; min-width: 0; }
       <span>Total</span>
       <span id="cart-total-price"></span>
     </div>
+    <!-- Opciones de pago -->
+    <div id="cart-opciones-pago" style="display:none;padding:.6rem 1rem .55rem;border-top:1px solid var(--arena);background:#fafaf9">
+      <div style="font-size:.67rem;text-transform:uppercase;letter-spacing:.07em;color:#aaa;margin-bottom:.55rem">Opciones adicionales</div>
+      <label style="display:flex;align-items:center;gap:.55rem;margin-bottom:.45rem;cursor:pointer">
+        <input type="checkbox" id="cart-check-factura" style="accent-color:var(--bosque);width:15px;height:15px;flex-shrink:0" onchange="toggleCartOp('factura',this.checked)">
+        <span style="font-size:.82rem">Incluir factura <span style="color:var(--muted);font-size:.78rem">(+10%)</span></span>
+      </label>
+      <label style="display:flex;align-items:center;gap:.55rem;cursor:pointer">
+        <input type="checkbox" id="cart-check-tc" style="accent-color:var(--bosque);width:15px;height:15px;flex-shrink:0" onchange="toggleCartOp('tc',this.checked)">
+        <span style="font-size:.82rem">Pagar con Tarjeta de Crédito <span style="color:var(--muted);font-size:.78rem">(+5%)</span></span>
+      </label>
+    </div>
     <button class="wa-order-btn" onclick="pedirPorWhatsApp()">
       <svg class="wa-icon" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.093.539 4.062 1.485 5.772L0 24l6.382-1.473C8.044 23.447 9.99 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.87 0-3.628-.494-5.145-1.358l-.368-.212-3.791.874.907-3.695-.237-.384C2.516 15.613 2 13.863 2 12 2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
       <span id="wa-btn-label">Consultar por WhatsApp</span>
@@ -976,6 +1100,10 @@ main { padding: 28px 36px 100px; flex: 1; min-width: 0; }
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="venta-toast" id="venta-toast">
+  <span class="venta-dot"></span>
+  <span id="venta-msg"></span>
+</div>
 
 <script>
 // ══════════════════════════════════════════════════════════════════
@@ -1103,7 +1231,7 @@ function continuarSinCuenta() {
 // Guarda el pedido del carrito en el panel de Ventas (pendiente de confirmar),
 // en paralelo al mensaje que se manda por WhatsApp — no bloquea ni interrumpe
 // el envío por WhatsApp si esto falla (fire-and-forget).
-function guardarPedidoPendiente() {
+function guardarPedidoPendiente(asesorNombre) {
   if (!carrito.length) return;
   try {
     const modoFeria = siteCfg.modoFeria ?? datos?.config?.modoFeria;
@@ -1118,6 +1246,13 @@ function guardarPedidoPendiente() {
         clienteNombre: clienteActual?.nombre || '',
         celular: clienteActual?.celular || '',
         items,
+        conFactura: !!cartFactura,
+        conTarjeta: !!cartTC,
+        // Si el cliente eligió un asesor específico en el carrito, se manda
+        // su nombre para que el Panel de Ventas lo pueda pretildar como
+        // vendedor al convertir este pedido en venta (ver
+        // pedidoPendienteConvertir() en admin.html).
+        asesorNombre: asesorNombre || '',
       }),
     }).catch(() => {});
   } catch(e) {}
@@ -1126,6 +1261,27 @@ function guardarPedidoPendiente() {
 // ── CARRITO ID & HISTORIAL ──────────────────────────────────────────
 const CART_HISTORY_SK = 'ap_cart_history_v1';
 let carritoId = null;
+let cartFactura = false;
+let cartTC = false;
+
+function toggleCartOp(tipo, valor) {
+  if (tipo === 'factura') cartFactura = valor;
+  if (tipo === 'tc')      cartTC      = valor;
+  actualizarCarritoUI();
+}
+// Mismo criterio que ventaDraftRecargoPct()/ventaDraftTotal() en admin.html:
+// los porcentajes se SUMAN y se aplican una sola vez sobre la base (no en
+// cadena), para que el total coincida siempre con el Panel de Ventas.
+function cartRecargoPct() { return (cartTC ? 5 : 0) + (cartFactura ? 10 : 0); }
+function cartTotalConRecargo(base) { return Math.round(base * (1 + cartRecargoPct() / 100)); }
+// Se llama en los 4 lugares donde el pedido se termina de mandar (con o sin
+// selección de asesor), para que factura/TC no queden tildados de un pedido
+// al siguiente.
+function resetCartExtras() {
+  cartFactura = false; cartTC = false;
+  const cf = document.getElementById('cart-check-factura'); if (cf) cf.checked = false;
+  const ct = document.getElementById('cart-check-tc');      if (ct) ct.checked = false;
+}
 
 function _genCarritoId() {
   return 'cart_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
@@ -1219,7 +1375,8 @@ function elegirAsesor(asesorId) {
     abrirWhatsApp(a.telefono, _pendingWaMsg);
     _pendingWaMsg = null;
     guardarHistorialCarrito('enviado');
-    guardarPedidoPendiente();
+    guardarPedidoPendiente(a.nombre);
+    resetCartExtras();
     carrito = []; resetCarritoId();
     actualizarCarritoUI(); cerrarCarrito();
   }
@@ -1238,6 +1395,7 @@ function continuarSinAsesor() {
     abrirWhatsApp(num, msg);
     guardarHistorialCarrito('enviado');
     guardarPedidoPendiente();
+    resetCartExtras();
     carrito = []; resetCarritoId();
     actualizarCarritoUI(); cerrarCarrito();
   }
@@ -1285,6 +1443,17 @@ let siteCfg = {
   subtextoBanner:  'Precios especiales por tiempo limitado',
   carritoVisible:  true,
   etiquetas: { oferta: false, feria: true, nuevo: false },
+  ofertaBanner: {
+    activo: false,
+    finOferta: '',
+    envioGratisTexto: 'Envío gratis en compras desde Gs. 500.000',
+    cuponTexto: '',
+    tag: 'FERIA DE DESCUENTOS',
+    titulo: 'Ofertas por tiempo limitado',
+    subtitulo: 'Stock limitado — cuando se agota una unidad, no vuelve a esta oferta.',
+    sorteoActivo: false,
+    sorteoTexto: '',
+  },
 };
 
 // ══════════════════════════════════════════════════════════════════
@@ -1483,6 +1652,158 @@ function renderBanners(sc) {
   }).join('');
 }
 
+// ── BANNER DE OFERTA DESTACADA (marquee + contador + sorteo + ventas en vivo) ──
+// Todo controlado por siteCfg.ofertaBanner — si no está activo, no se
+// renderiza nada y no se inician los intervalos (setInterval de contador
+// y de ventas en vivo arrancan una sola vez, ver flags _ofertaTimersOn).
+let _ofertaTimersOn  = false;
+let _ofertaFinTs      = null;
+
+function productosFlat() {
+  if (!datos || !datos.categorias) return [];
+  const out = [];
+  datos.categorias.forEach(cat => {
+    (cat.productos || []).forEach(p => out.push({ ...p, _categoria: cat.nombre }));
+  });
+  return out;
+}
+
+function explorarCatalogo(e) {
+  if (e) e.preventDefault();
+  const el = document.getElementById('catalog');
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderOfertaBanner(sc) {
+  const cfg = sc.ofertaBanner || {};
+  const marqueeEl  = document.getElementById('urgency-marquee');
+  const heroEl     = document.getElementById('oferta-hero');
+  if (!marqueeEl || !heroEl) return;
+
+  if (!cfg.activo) {
+    marqueeEl.classList.remove('visible');
+    heroEl.classList.remove('visible');
+    return;
+  }
+  marqueeEl.classList.add('visible');
+  heroEl.classList.add('visible');
+
+  // Textos del hero
+  const tagEl = document.getElementById('oferta-tag');
+  const tituloEl = document.getElementById('oferta-title');
+  const subEl = document.getElementById('oferta-sub');
+  if (tagEl)    tagEl.textContent    = cfg.tag      || 'FERIA DE DESCUENTOS';
+  if (tituloEl) tituloEl.textContent = cfg.titulo    || 'Ofertas por tiempo limitado';
+  if (subEl)    subEl.textContent    = cfg.subtitulo || '';
+
+  // Aviso de sorteo
+  const sorteoEl = document.getElementById('oferta-sorteo');
+  if (sorteoEl) {
+    if (cfg.sorteoActivo && cfg.sorteoTexto) {
+      sorteoEl.textContent = cfg.sorteoTexto;
+      sorteoEl.style.display = '';
+    } else {
+      sorteoEl.style.display = 'none';
+    }
+  }
+
+  // Marquee: envío gratis, descuentos por categoría, stock bajo, cupón, sorteo
+  const items = [];
+  if (cfg.envioGratisTexto) items.push(cfg.envioGratisTexto);
+  CATEGORIAS_DESCUENTO_AUTO.forEach(catNombre => {
+    const cat = (datos?.categorias || []).find(c => (c.nombre || '').trim().toLowerCase() === catNombre);
+    if (cat) items.push(`Hasta 20% OFF en ${cat.nombre}`);
+  });
+  const flat = productosFlat();
+  const ultimasUnidades = flat.filter(p => typeof p.stock === 'number' && p.stock === 1).slice(0, 3);
+  ultimasUnidades.forEach(p => items.push(`STOCK BAJO: ${p.nombre} — ¡ÚLTIMA UNIDAD!`));
+  if (cfg.cuponTexto) items.push(cfg.cuponTexto);
+  if (cfg.sorteoActivo && cfg.sorteoTexto) items.push(cfg.sorteoTexto);
+  items.push('Explorá el catálogo completo — hacé clic en "Explorar ofertas"');
+
+  const trackEl = document.getElementById('urgency-track');
+  if (trackEl) {
+    const doble = items.length ? [...items, ...items] : [];
+    trackEl.innerHTML = doble.map(txt => `
+      <span class="urgency-item"><span>${txt}</span><span class="dot">●</span></span>
+    `).join('');
+  }
+
+  // Contador: SOLO corre si siteCfg.ofertaBanner.finOferta es una fecha real
+  // configurada a futuro. No se inventa un "fin del día" — un contador
+  // corriendo sin una fecha real detrás es urgencia falsa, y eso genera
+  // desconfianza si el cliente se da cuenta.
+  const cdBox = document.getElementById('oferta-countdown');
+  let fin = cfg.finOferta ? new Date(cfg.finOferta) : null;
+  const finValido = fin && !isNaN(fin.getTime()) && fin.getTime() > Date.now();
+  if (cdBox) cdBox.style.display = finValido ? '' : 'none';
+  _ofertaFinTs = finValido ? fin.getTime() : null;
+
+  if (!_ofertaTimersOn) {
+    _ofertaTimersOn = true;
+    iniciarCountdownOferta();
+    iniciarVentasEnVivo();
+  }
+}
+
+function iniciarCountdownOferta() {
+  const pad = n => String(Math.max(0, n)).padStart(2, '0');
+  const tick = () => {
+    const cdEl = document.getElementById('oferta-countdown');
+    if (!cdEl || !_ofertaFinTs) return;
+    const msLeft = Math.max(0, _ofertaFinTs - Date.now());
+    const totalSec = Math.floor(msLeft / 1000);
+    const h = document.getElementById('cd-h');
+    const m = document.getElementById('cd-m');
+    const s = document.getElementById('cd-s');
+    if (h) h.textContent = pad(Math.floor(totalSec / 3600));
+    if (m) m.textContent = pad(Math.floor((totalSec % 3600) / 60));
+    if (s) s.textContent = pad(totalSec % 60);
+  };
+  tick();
+  setInterval(tick, 1000);
+}
+
+// Ventas en vivo: SOLO muestra ventas reales y confirmadas (estado 'pagada'
+// en ventas.json), servidas por /api/actividad-reciente (nombre de pila +
+// producto + fecha, sin celular ni dirección). Si no hay ninguna venta
+// reciente, no se muestra nada — nunca se inventa un nombre o un producto.
+let _actividadCache = null;
+async function _cargarActividadReciente() {
+  if (_actividadCache) return _actividadCache;
+  try {
+    const resp = await fetch('/api/actividad-reciente');
+    const data = await resp.json();
+    _actividadCache = (data && data.ok && Array.isArray(data.actividad)) ? data.actividad : [];
+  } catch(e) { _actividadCache = []; }
+  return _actividadCache;
+}
+function _tiempoRelativo(iso) {
+  const mins = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (mins < 60) return `hace ${mins} min`;
+  const horas = Math.round(mins / 60);
+  if (horas < 24) return `hace ${horas} h`;
+  return `hace ${Math.round(horas / 24)} d`;
+}
+async function iniciarVentasEnVivo() {
+  const toastEl = document.getElementById('venta-toast');
+  const msgEl   = document.getElementById('venta-msg');
+  if (!toastEl || !msgEl) return;
+  let hideTimer, idx = 0;
+  const ciclo = async () => {
+    const actividad = await _cargarActividadReciente();
+    if (!actividad.length) return; // sin ventas reales recientes: no se muestra nada
+    const item = actividad[idx % actividad.length];
+    idx++;
+    msgEl.textContent = `${item.nombre} acaba de comprar ${item.producto} · ${_tiempoRelativo(item.fecha)}`;
+    toastEl.classList.add('show');
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => toastEl.classList.remove('show'), 4200);
+  };
+  setTimeout(ciclo, 3000);
+  setInterval(ciclo, 9000);
+}
+
 // ── INFO CONTACTO ─────────────────────────────────────────────────────
 function renderInfoContacto(sc, config) {
   const secciones     = sc.paginaInicio?.secciones || [];
@@ -1549,6 +1870,9 @@ function aplicarSiteConfig() {
 
   // Banners hero
   renderBanners(sc);
+
+  // Banner de oferta destacada: marquee + contador + sorteo + ventas en vivo
+  renderOfertaBanner(sc);
 
   // Catálogo visibility
   const mainEl = document.querySelector('main');
@@ -1779,6 +2103,7 @@ function stockTag(disponible, stock) {
   if (typeof stock === 'number') {
     if (stock <= 0) return { clase: 'sin-stock', texto: 'Sin stock' };
     if (stock === 1) return { clase: 'urgencia', texto: '¡Última unidad!' };
+    if (stock <= 3)  return { clase: 'urgencia', texto: `Quedan ${stock} unidades` };
     return { clase: 'disponible', texto: 'Disponible' };
   }
   if (disponible === false || disponible === 0) return { clase: 'sin-stock', texto: 'Sin stock' };
@@ -1907,6 +2232,12 @@ function renderTarjeta(p, config, catId = '', catNombre = '') {
   const tag          = stockTag(p.disponible, p.stock);
   const imgPrincipal = p.imagen || p.foto1 || '';
   const imgMuestra   = p.imagenMuestra || p.foto2 || imgPrincipal;
+  // Hasta 2 fotos extra opcionales (imagenMuestra2/3). Productos viejos que
+  // nunca las tuvieron simplemente no las mandan — no rompe nada existente.
+  const _extras = [p.imagenMuestra2, p.imagenMuestra3].filter(Boolean);
+  const galeria = [imgPrincipal, imgMuestra, ..._extras]
+    .filter((url, i, arr) => url && arr.indexOf(url) === i); // sin duplicados
+  const tieneMultiplesFotos = galeria.length > 1;
   const precioHTML   = renderPrecioBlock(p, config, catNombre);
   const etiquetasHTML = !agotado ? renderEtiquetasSiteCfg(modoFeria, catNombre, p) : '';
 
@@ -1933,9 +2264,12 @@ function renderTarjeta(p, config, catId = '', catNombre = '') {
          data-precio="${_pSortable}"
          data-disponible="${agotado ? '0' : '1'}">
       ${agotado ? '<span class="agotado-badge">Sin stock</span>' : ''}
-      <div class="img-container">
-        <img class="img-main"   src="${imgPrincipal}" alt="${p.nombre}" loading="lazy">
-        <img class="img-sample" src="${imgMuestra}"   alt="${p.nombre} — muestra" loading="lazy">
+      <div class="img-container${tieneMultiplesFotos ? ' has-multi' : ''}"${tieneMultiplesFotos ? ` data-total-fotos="${galeria.length}" data-active-idx="0" onclick="toggleFotoCard(this)"` : ''}>
+        <img class="img-main"   src="${galeria[0]}" alt="${p.nombre}" loading="lazy">
+        ${galeria[1] ? `<img class="img-sample" src="${galeria[1]}" alt="${p.nombre} — muestra" loading="lazy">` : ''}
+        ${galeria[2] ? `<img class="img-extra" data-idx="2" src="${galeria[2]}" alt="${p.nombre} — foto 3" loading="lazy">` : ''}
+        ${galeria[3] ? `<img class="img-extra" data-idx="3" src="${galeria[3]}" alt="${p.nombre} — foto 4" loading="lazy">` : ''}
+        ${tieneMultiplesFotos ? `<span class="photo-badge">1 / ${galeria.length}</span>` : ''}
       </div>
       <div class="card-info">
         <span class="stock-tag ${tag.clase}">${tag.texto}</span>
@@ -1948,6 +2282,30 @@ function renderTarjeta(p, config, catId = '', catNombre = '') {
         </div>
       </div>
     </div>`;
+}
+
+// Toca la imagen del producto (celular/tablet, o click en desktop) para
+// alternar entre la foto principal y la foto muestra. En desktop el hover
+// ya hace este cambio; el tap es lo que faltaba en pantallas táctiles,
+// donde el hover nunca se dispara y la segunda foto no se veía nunca.
+function toggleFotoCard(el) {
+  const card = el.closest('.card');
+  if (!card) return;
+  const total = parseInt(el.dataset.totalFotos, 10) || 2;
+  let idx = (parseInt(el.dataset.activeIdx, 10) || 0) + 1;
+  if (idx >= total) idx = 0;
+  el.dataset.activeIdx = idx;
+
+  // idx 0/1 → mismo mecanismo de siempre (clase "flipped", vía hover o tap).
+  // idx 2/3 → foto extra por encima, solo alcanzable con tap (el hover
+  // nunca las mostró y sigue sin hacerlo).
+  card.classList.toggle('flipped', idx === 1);
+  el.querySelectorAll('.img-extra').forEach(img => {
+    img.classList.toggle('show', img.dataset.idx === String(idx));
+  });
+
+  const badge = el.querySelector('.photo-badge');
+  if (badge) badge.textContent = (idx + 1) + ' / ' + total;
 }
 
 // ── CARRITO ─────────────────────────────────────────────────────────
@@ -2033,7 +2391,7 @@ function actualizarCarritoUI() {
   if (footerEl) footerEl.style.display = carrito.length > 0 ? '' : 'none';
 
   // Limpiar totales dinámicos previos
-  ['cart-descuento-row','cart-total-final'].forEach(id => {
+  ['cart-descuento-row','cart-factura-row','cart-tc-row','cart-total-final'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.remove();
   });
@@ -2050,14 +2408,44 @@ function actualizarCarritoUI() {
     } else {
       totalRowEl.style.display = 'none';
     }
+    // Recargos opcionales — aditivos, no en cadena (ver cartRecargoPct()),
+    // para que coincidan 1:1 con lo que carga el Panel de Ventas.
+    const facturaAmt = cartFactura ? Math.round(precioTotal * 0.10) : 0;
+    const tcAmt      = cartTC ? Math.round(precioTotal * 0.05) : 0;
+    const totalConOpciones = cartTotalConRecargo(precioTotal);
+    const waBtn = footerEl.querySelector('.wa-order-btn');
+
+    if (cartFactura) {
+      const rfact = document.createElement('div');
+      rfact.id = 'cart-factura-row';
+      rfact.className = 'cart-total';
+      rfact.style.fontSize = '.82rem';
+      rfact.innerHTML = `<span>Factura <span style="color:var(--muted)">(10%)</span></span><span style="color:#7a6020">+ ${formatPrecio(facturaAmt, config.moneda)}</span>`;
+      footerEl.insertBefore(rfact, waBtn);
+    }
+    if (cartTC) {
+      const rtc = document.createElement('div');
+      rtc.id = 'cart-tc-row';
+      rtc.className = 'cart-total';
+      rtc.style.fontSize = '.82rem';
+      rtc.innerHTML = `<span>Tarjeta de crédito <span style="color:var(--muted)">(5%)</span></span><span style="color:#7a6020">+ ${formatPrecio(tcAmt, config.moneda)}</span>`;
+      footerEl.insertBefore(rtc, waBtn);
+    }
+
     const totalFinal = document.createElement('div');
     totalFinal.id = 'cart-total-final';
     totalFinal.className = 'cart-total';
     totalFinal.style.fontWeight = '700';
-    totalFinal.innerHTML = `<span>Total</span><span style="color:var(--bosque);font-family:'Cormorant Garamond',serif;font-size:1.1rem">${formatPrecio(precioTotal, config.moneda)}</span>`;
-    footerEl.insertBefore(totalFinal, footerEl.querySelector('.wa-order-btn'));
+    totalFinal.innerHTML = `<span>Total</span><span style="color:var(--bosque);font-family:'Cormorant Garamond',serif;font-size:1.1rem">${formatPrecio(totalConOpciones, config.moneda)}</span>`;
+    footerEl.insertBefore(totalFinal, waBtn);
+
+    // Mostrar/ocultar sección de opciones
+    const opcionesEl = document.getElementById('cart-opciones-pago');
+    if (opcionesEl) opcionesEl.style.display = '';
   } else {
     totalRowEl.style.display = 'none';
+    const opcionesEl = document.getElementById('cart-opciones-pago');
+    if (opcionesEl) opcionesEl.style.display = 'none';
   }
 
   itemsEl.innerHTML = carrito.map(i => {
@@ -2100,6 +2488,13 @@ function pedirPorWhatsApp() {
   const total    = carrito.reduce((s, i) => s + precioEfectivo(i, modoFeria) * i.qty, 0);
   const subtotal = carrito.reduce((s, i) => s + (i.precioNormal || i.precio || 0) * i.qty, 0);
   const descuento = modoFeria ? Math.max(0, subtotal - total) : 0;
+  // Recargos opcionales — aditivos, no en cadena (ver cartRecargoPct()),
+  // para que el mensaje de WhatsApp coincida siempre con lo que se ve en
+  // el carrito y con lo que carga el Panel de Ventas. Se calculan acá
+  // AFUERA del if/else de modoFeria para que apliquen en los dos casos.
+  const facturaAmtWA = cartFactura ? Math.round(total * 0.10) : 0;
+  const tcAmtWA       = cartTC ? Math.round(total * 0.05) : 0;
+  const totalFinalWA  = cartTotalConRecargo(total);
   let msg;
   if (modoFeria) {
     const lineas = carrito.map(i => {
@@ -2112,29 +2507,39 @@ function pedirPorWhatsApp() {
     }).join('\n');
     msg = config.mensajeWhatsapp + '\n\n' + lineas;
     if (descuento > 0) msg += '\n\nSubtotal: ' + formatPrecio(subtotal, config.moneda);
-    if (descuento > 0) msg += '\nDescuento: -' + formatPrecio(descuento, config.moneda);
-    msg += '\n\nTotal: ' + formatPrecio(total, config.moneda);
+    if (descuento > 0) msg += '\nDescuento feria: -' + formatPrecio(descuento, config.moneda);
   } else {
     const lineas = carrito.map(i => '- ' + i.qty + 'x ' + i.nombre).join('\n');
     msg = 'Hola! Me interesan estos productos y quiero consultar precios:\n\n' + lineas + '\n\nMe podés dar mas info?';
+  }
+  if (facturaAmtWA > 0 || tcAmtWA > 0) {
+    msg += '\n\nTotal productos: ' + formatPrecio(total, config.moneda);
+    if (facturaAmtWA > 0) msg += '\nFactura (+10%): +' + formatPrecio(facturaAmtWA, config.moneda);
+    if (tcAmtWA > 0)      msg += '\nTarjeta de crédito (+5%): +' + formatPrecio(tcAmtWA, config.moneda);
+    msg += '\n*Total final: ' + formatPrecio(totalFinalWA, config.moneda) + '*';
+  } else if (modoFeria) {
+    msg += '\n\nTotal: ' + formatPrecio(totalFinalWA, config.moneda);
   }
   guardarHistorialCarrito('consultando');
   if (_seleccionOn()) {
     const asesores = _asesoresParaCarrito();
     if (asesores.length === 1) {
       abrirWhatsApp(asesores[0].telefono, msg);
-      guardarHistorialCarrito('enviado'); guardarPedidoPendiente(); carrito = []; resetCarritoId();
+      guardarHistorialCarrito('enviado'); guardarPedidoPendiente(asesores[0].nombre); resetCartExtras();
+      carrito = []; resetCarritoId();
       actualizarCarritoUI(); cerrarCarrito();
     } else if (asesores.length > 1) {
       mostrarModalAsesores(msg, asesores);
     } else {
       abrirWhatsApp(config.whatsapp, msg);
-      guardarHistorialCarrito('enviado'); guardarPedidoPendiente(); carrito = []; resetCarritoId();
+      guardarHistorialCarrito('enviado'); guardarPedidoPendiente(); resetCartExtras();
+      carrito = []; resetCarritoId();
       actualizarCarritoUI(); cerrarCarrito();
     }
   } else {
     abrirWhatsApp(config.whatsapp, msg);
-    guardarHistorialCarrito('enviado'); guardarPedidoPendiente(); carrito = []; resetCarritoId();
+    guardarHistorialCarrito('enviado'); guardarPedidoPendiente(); resetCartExtras();
+    carrito = []; resetCarritoId();
     actualizarCarritoUI(); cerrarCarrito();
   }
 }
