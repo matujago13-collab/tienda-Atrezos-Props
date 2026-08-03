@@ -3,5 +3,28 @@ node_modules/
 *.jpeg
 *.png
 *.webp
-productos.json
 .netlify/
+.env
+costos-internos.json
+notas-pendientes.json
+clientes.json
+ventas.json
+vendedores.json
+
+# ── Panel admin: solo interno, corre local con admin-server.js ──
+# No se sube a Netlify ni al repo público.
+/admin.html
+/admin-server.js
+/server.js
+/package.json
+/package-lock.json
+netlify/functions/
+netlify.toml.bak-full-admin
+
+# ── Scripts y utilidades locales ──
+*.bat
+*.vbs
+*.ps1
+migrar-imagenes-base64.js
+upload-fixed.js
+productos_importar.json
