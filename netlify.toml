@@ -6,3 +6,13 @@
   from = "/api/productos"
   to   = "/.netlify/functions/productos"
   status = 200
+
+[[redirects]]
+  from = "/api/cliente-auth"
+  to   = "/.netlify/functions/cliente-auth"
+  status = 200
+
+[[redirects]]
+  from = "/api/pedido-pendiente"
+  to   = "/.netlify/functions/pedido-pendiente"
+  status = 200
