@@ -21,7 +21,9 @@ exports.handler = async (event) => {
     const rutaBase = '/' + ocBase.replace(/^\/|\/$/g, '/').replace(/\/$/, '');
     const rutaJson = rutaBase.replace(/\/[^/]+$/, '') + '/productos.json';
 
-    const { data } = await axios.get(davBase + rutaJson, {
+    // encodeURI preserva "/" pero codifica espacios — ownCloud no acepta
+    // espacios crudos en el path (mismo criterio que davPut() en admin-server.js).
+    const { data } = await axios.get(davBase + encodeURI(rutaJson), {
       auth: { username: ocUser, password: ocPass },
       responseType: 'text',
       validateStatus: s => s === 200,
@@ -32,7 +34,8 @@ exports.handler = async (event) => {
       headers: { 'Content-Type': 'application/json' },
       body: data,
     };
-  } catch {
+  } catch (err) {
+    console.error('[api/productos] Error leyendo productos.json de ownCloud:', err.message);
     return { statusCode: 200, body: 'null',
              headers: { 'Content-Type': 'application/json' } };
   }
