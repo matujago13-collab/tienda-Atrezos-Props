@@ -11,6 +11,10 @@ clientes.json
 ventas.json
 vendedores.json
 
+# ── Historial/Deshacer: copias de versiones anteriores de los archivos de
+# arriba (ver writeJsonAtomic en admin-server.js). Mismo criterio: nunca a git.
+backups/
+
 # ── Panel admin: solo interno, corre local con admin-server.js ──
 # No se sube a Netlify ni al repo público.
 /admin.html
