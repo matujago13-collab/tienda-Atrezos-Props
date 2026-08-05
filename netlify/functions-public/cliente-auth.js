@@ -215,6 +215,14 @@ exports.handler = async (event) => {
     if (!cuenta || !cuenta.pinHash || !cuenta.pinSalt || !verificarPin(pin, cuenta.pinSalt, cuenta.pinHash)) {
       return { statusCode: 401, headers: HEADERS_CORS, body: JSON.stringify({ ok: false, error: 'Celular o PIN incorrectos.' }) };
     }
+    // sincronizarClientePublico() ya revisa si el celular existe en clientes.json
+    // antes de crear nada, así que llamarla en cada login es inofensivo (no
+    // duplica ni pisa datos). Esto autocura cuentas que se registraron antes
+    // de que existiera esta sincronización, o cuyo intento de sync en el
+    // registro falló silenciosamente (ej. ownCloud caído en ese momento) —
+    // sin esto, esas cuentas quedaban "no encontradas" para siempre en el
+    // Panel de Ventas por más que el cliente vuelva a iniciar sesión.
+    await sincronizarClientePublico(cuenta.nombre, cuenta.celular); // best-effort, no bloquea la respuesta si falla
     return {
       statusCode: 200, headers: HEADERS_CORS,
       body: JSON.stringify({ ok: true, cliente: { id: cuenta.id, nombre: cuenta.nombre, celular: cuenta.celular } }),

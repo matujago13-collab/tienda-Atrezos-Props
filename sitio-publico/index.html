@@ -223,6 +223,12 @@ nav {
   color: var(--negro); outline: none; width: 200px;
 }
 .search-input::placeholder { color: #bbb; }
+.search-clear-btn {
+  border: none; background: none; cursor: pointer; flex-shrink: 0;
+  color: #bbb; font-size: 0.78rem; line-height: 1; padding: 3px 5px;
+  border-radius: 50%; transition: background .15s, color .15s;
+}
+.search-clear-btn:hover { background: var(--arena); color: var(--bosque); }
 .filters {
   display: flex; gap: 0; overflow-x: auto;
   scrollbar-width: thin; scrollbar-color: var(--arena) transparent; flex: 1;
@@ -553,21 +559,17 @@ main { padding: 28px 36px 100px; flex: 1; min-width: 0; }
 }
 .img-container img {
   position: absolute; inset: 0; width: 100%; height: 100%;
-  object-fit: contain; transition: opacity 0.4s ease, transform 0.4s ease;
+  object-fit: contain; opacity: 0; z-index: 1;
+  transition: opacity 0.4s ease, transform 0.4s ease;
 }
-.img-main   { opacity: 1; z-index: 1; }
-.img-sample { opacity: 0; z-index: 2; }
-.card:hover .img-main   { opacity: 0; transform: scale(1.04); }
-.card:hover .img-sample { opacity: 1; }
-.card.flipped .img-main   { opacity: 0; }
-.card.flipped .img-sample { opacity: 1; }
-
-/* Foto 3 y 4 (opcionales): quedan por encima de main/sample y solo se
-   revelan al tocar/clickear (toggleFotoCard), nunca por hover, así que
-   no interfieren con el comportamiento de hover de siempre. */
-.img-extra { opacity: 0; z-index: 3; }
-.img-extra[data-idx="3"] { z-index: 4; }
-.img-extra.show { opacity: 1; }
+/* Una sola transición (fade) para CUALQUIER cantidad de fotos (2, 3 o 4):
+   todas las imágenes usan la misma regla, solo la que tiene .active se ve.
+   Antes el hover (CSS puro) solo alternaba entre la foto 1 y 2 sin nunca
+   llegar a la 3/4, y el tap usaba una mezcla de clases distinta ("flipped"
+   + "show") — ahora hover y tap disparan la misma función
+   (avanzarFotoCard) y el mismo efecto, sea cual sea la cantidad de fotos. */
+.img-container img.active { opacity: 1; z-index: 2; }
+.card:hover .img-container img.active { transform: scale(1.04); }
 
 .img-container.has-multi { cursor: pointer; }
 .photo-badge {
@@ -954,6 +956,7 @@ main { padding: 28px 36px 100px; flex: 1; min-width: 0; }
   <div class="search-wrap toolbar-search">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     <input class="search-input" id="search-input" type="text" placeholder="Buscar productos…" oninput="buscar(this.value)">
+    <button type="button" class="search-clear-btn" id="search-clear" onclick="buscarLimpiar()" aria-label="Limpiar búsqueda" style="display:none">✕</button>
   </div>
 </div>
 
@@ -969,6 +972,7 @@ main { padding: 28px 36px 100px; flex: 1; min-width: 0; }
         <input class="sidebar-search-input" id="search-input-sidebar"
                type="text" placeholder="Buscar productos…"
                oninput="buscar(this.value)" autocomplete="off">
+        <button type="button" class="search-clear-btn" id="search-clear-sidebar" onclick="buscarLimpiar()" aria-label="Limpiar búsqueda" style="display:none">✕</button>
       </div>
 
       <!-- CATEGORÍAS -->
@@ -1139,6 +1143,20 @@ let datos = null;
 let carrito = [];
 let categoriaActiva = 'todas';
 let terminoBusqueda = '';
+
+// Compara sin importar mayúsculas/minúsculas ni acentos (tildes, diéresis…):
+// "cancion" encuentra "canción", "Débora" encuentra "debora". Se usa tanto
+// para armar el índice de búsqueda de cada tarjeta (data-nombre) como para
+// el texto que se tipea en el buscador.
+function normalizarTexto(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+// true en desktop/mouse (dispara el cambio de foto al pasar el cursor),
+// false en pantallas táctiles (donde "hover" no existe de verdad y el
+// cambio se dispara al tocar). Se calcula una sola vez: mismo criterio que
+// el resto del sitio (ver @media (hover:none) en el CSS de arriba).
+const HOVER_CAPAZ = window.matchMedia('(hover: hover)').matches;
 
 // ── CLIENTE (login liviano celular + PIN) ───────────────────────────
 const CLIENTE_SK = 'ap_cliente_v1';
@@ -2001,13 +2019,25 @@ function filtrar(id, btn) {
 }
 
 function buscar(val) {
-  terminoBusqueda = val.trim().toLowerCase();
+  terminoBusqueda = normalizarTexto(val.trim());
   // Sincronizar ambos inputs sin disparar evento
   ['search-input', 'search-input-sidebar'].forEach(id => {
     const el = document.getElementById(id);
     if (el && el.value !== val) el.value = val;
   });
+  // Mostrar/ocultar la "x" de limpiar según haya texto o no
+  ['search-clear', 'search-clear-sidebar'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.style.display = val ? '' : 'none';
+  });
   aplicarFiltros();
+}
+
+// Botón "x": vacía el buscador y le devuelve el foco (más rápido que
+// seleccionar todo el texto y borrarlo a mano).
+function buscarLimpiar() {
+  buscar('');
+  (document.getElementById('search-input-sidebar') || document.getElementById('search-input'))?.focus();
 }
 
 function aplicarFiltros() {
@@ -2260,15 +2290,12 @@ function renderTarjeta(p, config, catId = '', catNombre = '') {
     : (_pNormalBase || p.precioFeria || 0);
   return `
     <div class="card${agotado ? ' agotado' : ''}" id="prod-${catId}-${p.id}"
-         data-nombre="${p.nombre.toLowerCase()}"
+         data-nombre="${normalizarTexto(p.nombre)}"
          data-precio="${_pSortable}"
          data-disponible="${agotado ? '0' : '1'}">
       ${agotado ? '<span class="agotado-badge">Sin stock</span>' : ''}
-      <div class="img-container${tieneMultiplesFotos ? ' has-multi' : ''}"${tieneMultiplesFotos ? ` data-total-fotos="${galeria.length}" data-active-idx="0" onclick="toggleFotoCard(this)"` : ''}>
-        <img class="img-main"   src="${galeria[0]}" alt="${p.nombre}" loading="lazy">
-        ${galeria[1] ? `<img class="img-sample" src="${galeria[1]}" alt="${p.nombre} — muestra" loading="lazy">` : ''}
-        ${galeria[2] ? `<img class="img-extra" data-idx="2" src="${galeria[2]}" alt="${p.nombre} — foto 3" loading="lazy">` : ''}
-        ${galeria[3] ? `<img class="img-extra" data-idx="3" src="${galeria[3]}" alt="${p.nombre} — foto 4" loading="lazy">` : ''}
+      <div class="img-container${tieneMultiplesFotos ? ' has-multi' : ''}"${tieneMultiplesFotos ? ` data-total-fotos="${galeria.length}" data-active-idx="0" ${HOVER_CAPAZ ? 'onmouseenter="avanzarFotoCard(this)"' : 'onclick="avanzarFotoCard(this)"'}` : ''}>
+        ${galeria.map((url, i) => `<img class="img-foto${i === 0 ? ' active' : ''}" data-idx="${i}" src="${url}" alt="${p.nombre}${i > 0 ? ' — foto ' + (i + 1) : ''}" loading="lazy">`).join('')}
         ${tieneMultiplesFotos ? `<span class="photo-badge">1 / ${galeria.length}</span>` : ''}
       </div>
       <div class="card-info">
@@ -2284,24 +2311,22 @@ function renderTarjeta(p, config, catId = '', catNombre = '') {
     </div>`;
 }
 
-// Toca la imagen del producto (celular/tablet, o click en desktop) para
-// alternar entre la foto principal y la foto muestra. En desktop el hover
-// ya hace este cambio; el tap es lo que faltaba en pantallas táctiles,
-// donde el hover nunca se dispara y la segunda foto no se veía nunca.
-function toggleFotoCard(el) {
-  const card = el.closest('.card');
-  if (!card) return;
+// Cambia a la siguiente foto del producto (cicla 0→1→2→3→0…) con la MISMA
+// transición (fade) sin importar cuántas fotos tenga — 2, 3 o 4. En
+// desktop (HOVER_CAPAZ) se dispara al pasar el cursor por encima; en
+// pantallas táctiles se dispara al tocar (ver el onmouseenter/onclick
+// condicional en renderTarjeta). Antes eran dos mecanismos distintos —
+// hover en CSS puro que solo alternaba entre la foto 1 y 2, y un tap en JS
+// con otra lógica ("flipped" + "show") — que con 3 o 4 fotos no se veían
+// igual entre sí.
+function avanzarFotoCard(el) {
   const total = parseInt(el.dataset.totalFotos, 10) || 2;
   let idx = (parseInt(el.dataset.activeIdx, 10) || 0) + 1;
   if (idx >= total) idx = 0;
   el.dataset.activeIdx = idx;
 
-  // idx 0/1 → mismo mecanismo de siempre (clase "flipped", vía hover o tap).
-  // idx 2/3 → foto extra por encima, solo alcanzable con tap (el hover
-  // nunca las mostró y sigue sin hacerlo).
-  card.classList.toggle('flipped', idx === 1);
-  el.querySelectorAll('.img-extra').forEach(img => {
-    img.classList.toggle('show', img.dataset.idx === String(idx));
+  el.querySelectorAll('.img-foto').forEach(img => {
+    img.classList.toggle('active', img.dataset.idx === String(idx));
   });
 
   const badge = el.querySelector('.photo-badge');
