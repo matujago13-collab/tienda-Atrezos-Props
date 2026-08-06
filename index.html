@@ -2475,13 +2475,21 @@ function actualizarCarritoUI() {
 
   itemsEl.innerHTML = carrito.map(i => {
     const pe = precioEfectivo(i, modoFeria);
-    const esFeria = modoFeria && (i.precioFeria || 0) > 0;
+    const pNormalItem = i.precioNormal || i.precio || 0;
+    // Mismo criterio que pirdirPorWhatsApp() (tieneDesc = pe>0 && pn>0 &&
+    // pe<pn): cubre tanto el precio feria manual como el descuento
+    // automático (Vestuarios), no solo modoFeria+precioFeria, para que el
+    // tachado aparezca siempre que el precio efectivo sea menor al normal.
+    const tieneDescuento = pNormalItem > 0 && pe > 0 && pe < pNormalItem;
     const imgSrc = i.imagen || i.foto1 || '';
     return `<div class="cart-item">
       <img src="${imgSrc}" alt="${i.nombre}" onerror="this.style.opacity='.2'">
       <div class="cart-item-info">
         <div class="cart-item-name">${i.nombre}</div>
-        ${pe > 0 ? `<div class="cart-item-price${esFeria ? ' feria-price' : ''}">${formatPrecio(pe, config.moneda)} c/u${esFeria ? ' 🏷' : ''}</div>` : ''}
+        ${pe > 0 ? `<div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap">
+          ${tieneDescuento ? `<span class="price-normal tachado" style="font-size:.72rem">${formatPrecio(pNormalItem, config.moneda)}</span>` : ''}
+          <span class="cart-item-price${tieneDescuento ? ' feria-price' : ''}">${formatPrecio(pe, config.moneda)} c/u${tieneDescuento ? ' 🏷' : ''}</span>
+        </div>` : ''}
         <div class="cart-item-controls">
           <button class="qty-btn" onclick="cambiarCantidad('${i._catId}',${i.id},-1)">-</button>
           <span class="qty-num">${i.qty}</span>
