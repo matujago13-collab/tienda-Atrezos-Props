@@ -1,16 +1,13 @@
 {
-  "modoFeria": true,
-  "mostrarPrecios": true,
-  "preciosPorCategoria": {
-    "vestuarios": "ocultar"
-  },
+  "modoFeria": false,
+  "mostrarPrecios": false,
   "bannerActivo": false,
   "textoBanner": "Todo para hacer realidad tu creatividad",
   "subtextoBanner": "Encuentra inspiración, detalles y todo lo necesario para convertir cada idea en una sesión inolvidable",
   "carritoVisible": true,
   "etiquetas": {
     "oferta": false,
-    "feria": true,
+    "feria": false,
     "nuevo": false
   },
   "seleccionAsesorActivo": true,
