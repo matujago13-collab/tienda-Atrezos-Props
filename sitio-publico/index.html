@@ -1426,7 +1426,7 @@ function consultarProductoPorWhatsApp(prodId, catId) {
   const { config } = datos;
   const cat = datos.categorias.find(c => c.id === catId);
   const modoFeria = siteCfg.modoFeria ?? config.modoFeria;
-  const precio = precioEfectivo(p, modoFeria);
+  const precio = precioEfectivo(p, modoFeria, cat?.nombre);
   const carritoItem = carrito.find(i => i._catId === catId && i.id === prodId);
   const qty = carritoItem ? carritoItem.qty : 1;
   const url = window.location.origin + window.location.pathname + '#prod-' + catId + '-' + prodId;
@@ -1461,6 +1461,7 @@ let siteCfg = {
   subtextoBanner:  'Precios especiales por tiempo limitado',
   carritoVisible:  true,
   etiquetas: { oferta: false, feria: true, nuevo: false },
+  preciosPorCategoria: {},
   ofertaBanner: {
     activo: false,
     finOferta: '',
@@ -1946,7 +1947,7 @@ function renderFiltros(categorias) {
   const el = document.getElementById('sidebar-filters');
   if (!el) return;
 
-  const total = categorias.reduce((s, c) => s + (c.productos?.length || 0), 0);
+  const total = categorias.reduce((s, c) => s + productosVisiblesCatalogo(c.productos).length, 0);
   const totalEl = document.getElementById('sidebar-total-count');
   if (totalEl) totalEl.textContent = total + ' productos';
 
@@ -1957,7 +1958,7 @@ function renderFiltros(categorias) {
        <span class="cat-count">${total}</span>
      </button>` +
     categorias.map(c => {
-      const count = c.productos?.length || 0;
+      const count = productosVisiblesCatalogo(c.productos).length;
       return `<button class="sidebar-filter" data-cat-id="${c.id}" data-parent="" onclick="filtrar('${c.id}',this)">
         <span class="sidebar-filter-name">${c.nombre}</span>
         <span class="cat-count">${count}</span>
@@ -2098,6 +2099,15 @@ function aplicarFiltros() {
 }
 
 // ── CATÁLOGO ───────────────────────────────────────────────────────
+// Productos con visibleCatalogo === false se ocultan del sitio público
+// (no se pintan tarjetas) pero siguen existiendo en productos.json tal
+// cual — el panel admin (Ventas, Costos, etc.) los sigue usando con
+// normalidad, así se puede seguir vendiendo/registrando internamente
+// algo que no está a la vista del catálogo.
+function productosVisiblesCatalogo(productos) {
+  return (productos || []).filter(p => p.visibleCatalogo !== false);
+}
+
 function renderCatalogo(categorias, config) {
   if (!categorias || categorias.length === 0) {
     document.getElementById('empty-search').style.display = 'block';
@@ -2105,15 +2115,19 @@ function renderCatalogo(categorias, config) {
     return;
   }
   document.getElementById('empty-search').style.display = 'none';
-  document.getElementById('catalog').innerHTML = categorias.map(cat => `
+  document.getElementById('catalog').innerHTML = categorias.map(cat => {
+    const visibles = productosPorDisponibilidad(productosVisiblesCatalogo(cat.productos));
+    if (!visibles.length) return ''; // categoría sin productos visibles: no se pinta la sección
+    return `
     <section class="category-section" data-cat="${cat.id}">
       <h2 class="category-title"><em>${cat.nombre}</em></h2>
       <p class="category-desc">${cat.descripcion || 'Seleccioná los que te interesan y consultanos por WhatsApp.'}</p>
       <div class="products-grid">
-        ${productosPorDisponibilidad(cat.productos).map(p => renderTarjeta(p, config, cat.id, cat.nombre)).join('')}
+        ${visibles.map(p => renderTarjeta(p, config, cat.id, cat.nombre)).join('')}
       </div>
     </section>
-  `).join('');
+  `;
+  }).join('');
 }
 
 // Orden de exhibición dentro de cada categoría: disponibles primero, los
@@ -2187,53 +2201,56 @@ function nombreCategoriaPorId(catId) {
   return cat ? cat.nombre : '';
 }
 
-function renderPrecioBlock(p, config, catNombre) {
-  // siteCfg.mostrarPrecios oculta todos los precios
-  if (siteCfg.mostrarPrecios === false) {
-    return `<span class="no-price">Consultá precio</span>`;
-  }
+// preciosPorCategoria: override por categoría del interruptor general
+// mostrarPrecios. 'mostrar' | 'ocultar' | ausente = Automático (sigue el
+// interruptor general). Clave = nombre de categoría normalizado, mismo
+// criterio que CATEGORIAS_DESCUENTO_AUTO más arriba.
+function mostrarPrecioParaCategoria(catNombre) {
+  const clave = (catNombre || '').trim().toLowerCase();
+  const override = (siteCfg.preciosPorCategoria || {})[clave];
+  if (override === 'mostrar') return true;
+  if (override === 'ocultar') return false;
+  return siteCfg.mostrarPrecios !== false;
+}
 
-  // modoFeria: siteConfig tiene prioridad
+function renderPrecioBlock(p, config, catNombre) {
   const modoFeria = siteCfg.modoFeria ?? config.modoFeria ?? false;
   const moneda    = config.moneda || 'Gs.';
   const pNormal   = p.precioNormal || p.precio || 0;
   const pFeria    = p.precioFeria  || 0;
-  const pDescAuto = precioDescuentoAuto(p, catNombre);
 
-  if (pNormal === 0 && pFeria === 0) return `<span class="no-price">Consultá precio</span>`;
-
-  // Descuento automático por producto (ej. Vestuarios): precio rebajado
-  // permanente, no depende del interruptor Modo Feria — tiene prioridad
-  // sobre el precio feria manual para evitar mostrar dos descuentos a la
-  // vez. Si el admin apagó el automático para este producto, pDescAuto es
-  // null y sigue la lógica normal de abajo (Precio Feria a mano).
-  if (pDescAuto !== null) {
-    return `<div class="price-block">
-      <span class="price-normal tachado">${formatPrecio(pNormal, moneda)}</span>
-      <span class="price-feria activa">${formatPrecio(pDescAuto, moneda)}</span>
-    </div>`;
+  if (modoFeria) {
+    // Modo Feria: TODAS las categorías muestran precio + descuento, sin
+    // excepción — "Precios por Categoría" no aplica acá (solo fuera de
+    // Modo Feria). Esto también cubre Vestuarios (descuento automático).
+    if (pNormal === 0 && pFeria === 0) return `<span class="no-price">Consultá precio</span>`;
+    const pDescAuto = precioDescuentoAuto(p, catNombre);
+    if (pDescAuto !== null) {
+      return `<div class="price-block">
+        <span class="price-normal tachado">${formatPrecio(pNormal, moneda)}</span>
+        <span class="price-feria activa">${formatPrecio(pDescAuto, moneda)}</span>
+      </div>`;
+    }
+    if (pNormal > 0 && pFeria > 0) {
+      return `<div class="price-block">
+        <span class="price-normal tachado">${formatPrecio(pNormal, moneda)}</span>
+        <span class="price-feria activa">${formatPrecio(pFeria, moneda)}</span>
+      </div>`;
+    }
+    if (pFeria > 0 && pNormal === 0) {
+      return `<div class="price-block">
+        <span class="price-feria-label">🏷 Feria</span>
+        <span class="price-feria activa">${formatPrecio(pFeria, moneda)}</span>
+      </div>`;
+    }
+    if (pNormal > 0) return `<span class="card-price">${formatPrecio(pNormal, moneda)}</span>`;
+    return `<span class="no-price">Consultá precio</span>`;
   }
 
-  if (modoFeria && pNormal > 0 && pFeria > 0) {
-    return `<div class="price-block">
-      <span class="price-normal tachado">${formatPrecio(pNormal, moneda)}</span>
-      <span class="price-feria activa">${formatPrecio(pFeria, moneda)}</span>
-    </div>`;
-  }
-  if (modoFeria && pFeria > 0 && pNormal === 0) {
-    return `<div class="price-block">
-      <span class="price-feria-label">🏷 Feria</span>
-      <span class="price-feria activa">${formatPrecio(pFeria, moneda)}</span>
-    </div>`;
-  }
-  if (modoFeria && pNormal > 0 && pFeria === 0) {
-    return `<span class="card-price">${formatPrecio(pNormal, moneda)}</span>`;
-  }
-  if (!modoFeria && pNormal > 0 && pFeria > 0) {
-    return `<div class="price-block">
-      <span class="card-price">${formatPrecio(pNormal, moneda)}</span>
-      <span class="price-normal" style="color:#c8956a;font-size:0.7rem">🏷 Feria: ${formatPrecio(pFeria, moneda)}</span>
-    </div>`;
+  // Fuera de Modo Feria ("Mostrar Precios"): respeta el override por
+  // categoría, y muestra SOLO precio normal, sin tachados ni descuentos.
+  if (!mostrarPrecioParaCategoria(catNombre)) {
+    return `<span class="no-price">Consultá precio</span>`;
   }
   if (pNormal > 0) return `<span class="card-price">${formatPrecio(pNormal, moneda)}</span>`;
   if (pFeria > 0)  return `<span class="card-price">${formatPrecio(pFeria, moneda)}</span>`;
@@ -2243,7 +2260,7 @@ function renderPrecioBlock(p, config, catNombre) {
 function renderEtiquetasSiteCfg(modoFeriaEfectivo, catNombre, p) {
   const et = siteCfg.etiquetas || {};
   const badges = [];
-  const pDescAuto = precioDescuentoAuto(p, catNombre);
+  const pDescAuto = modoFeriaEfectivo ? precioDescuentoAuto(p, catNombre) : null;
   if (pDescAuto !== null) {
     const pct = typeof p.descAutoPct === 'number' ? Math.min(100, Math.max(0, p.descAutoPct)) : 20;
     badges.push(`<span style="background:#eef3ea;color:#4a6741;font-size:.62rem;font-weight:700;padding:2px 9px;border-radius:20px;letter-spacing:.05em;line-height:1">${Math.round(pct)}% OFF</span>`);
@@ -2351,18 +2368,23 @@ function productoPorClave(catId, prodId) {
 }
 
 function precioEfectivo(p, modoFeriaFallback, catNombre) {
+  // p._catId lo trae el carrito (ver agregarAlCarrito) para los casos en
+  // que no se pasa catNombre explícito.
+  const catNombreResuelto = catNombre ?? nombreCategoriaPorId(p._catId);
   const pNormal = p.precioNormal || p.precio || 0;
   const pFeria  = p.precioFeria  || 0;
-  if (siteCfg.mostrarPrecios === false) return 0;
   const modoFeria = siteCfg.modoFeria ?? modoFeriaFallback ?? false;
-  // Descuento automático por producto (ej. Vestuarios) tiene prioridad,
-  // igual que en renderPrecioBlock, para que el total del carrito coincida
-  // con el precio que se ve en la tarjeta. p._catId lo trae el carrito
-  // (ver agregarAlCarrito) para los casos en que no se pasa catNombre.
-  const pDescAuto = precioDescuentoAuto(p, catNombre ?? nombreCategoriaPorId(p._catId));
-  if (pDescAuto !== null) return pDescAuto;
-  if (modoFeria && pFeria > 0) return pFeria;
-  return pNormal;
+  if (modoFeria) {
+    // Modo Feria: todas las categorías, con descuento — mismo criterio
+    // que renderPrecioBlock (ignora el override por categoría).
+    const pDescAuto = precioDescuentoAuto(p, catNombreResuelto);
+    if (pDescAuto !== null) return pDescAuto;
+    if (pFeria > 0) return pFeria;
+    return pNormal;
+  }
+  // Fuera de Modo Feria: respeta el override por categoría, solo normal.
+  if (!mostrarPrecioParaCategoria(catNombreResuelto)) return 0;
+  return pNormal || pFeria;
 }
 
 function stockDisponible(p) {
@@ -2421,7 +2443,7 @@ function actualizarCarritoUI() {
     if (el) el.remove();
   });
 
-  if (siteCfg.mostrarPrecios !== false && precioTotal > 0) {
+  if (precioTotal > 0) {
     if (descuento > 0) {
       totalRowEl.style.display = '';
       totalRowEl.innerHTML = `<span>Subtotal</span><span style="color:#888">${formatPrecio(subtotal, config.moneda)}</span>`;
