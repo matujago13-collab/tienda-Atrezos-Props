@@ -596,11 +596,6 @@ main { padding: 28px 36px 100px; flex: 1; min-width: 0; }
 }
 .card-desc { font-size: 0.78rem; color: #888; line-height: 1.4; margin-bottom: 12px; }
 .card-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; }
-/* Preventa: precio arriba, botón "Reservar ahora" al final y a todo el
-   ancho — en vez de codo a codo con el precio como el resto de tarjetas,
-   para que se note mejor con un texto más largo que "+ Agregar". */
-.card-footer.footer-reservar { flex-direction: column; align-items: stretch; gap: 7px; }
-.card-footer.footer-reservar .add-btn.reservar { width: 100%; text-align: center; }
 
 /* ── BLOQUE DE PRECIOS ── */
 .price-block { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
@@ -636,60 +631,6 @@ main { padding: 28px 36px 100px; flex: 1; min-width: 0; }
 .add-btn.interesa { background: var(--bosque); color: #fff; border: 1.5px solid var(--bosque); }
 .add-btn.interesa:hover { background: #3a4d34; border-color: #3a4d34; }
 .add-btn:disabled { background: var(--arena); color: #999; cursor: default; }
-/* Botón distintivo para productos en preventa — mismo tono que la etiqueta
-   "🕒 Preventa" y el cartel promocional (var(--feria)), para que se note
-   que es una acción distinta a "Agregar" (reservar con anticipo, no comprar
-   algo que ya está en stock). */
-.add-btn.reservar {
-  background: linear-gradient(135deg, var(--feria), #c97a45);
-  color: #fff; box-shadow: 0 2px 6px rgba(176,96,48,.35);
-}
-.add-btn.reservar:hover { background: var(--feria); box-shadow: 0 3px 10px rgba(176,96,48,.45); }
-
-/* ── RESERVAS: sección que agrupa productos en preventa de todas las
-   categorías en un solo lugar (ver renderCatalogo/productosEnPreventa),
-   con un relojito animado tipo "luces" para que se note a simple vista. ── */
-.reservas-section {
-  background: linear-gradient(180deg, #fff7f1, rgba(255,255,255,0) 75%);
-  border: 1px solid #f2ddc9;
-  border-radius: 10px;
-  padding: 18px 16px 4px;
-  margin-bottom: 10px;
-}
-.reservas-title { display: flex; align-items: center; gap: 4px; }
-.reservas-clock {
-  position: relative;
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 26px; height: 26px; border-radius: 50%;
-  background: var(--feria); color: #fff; font-size: .95rem;
-  animation: reservas-pulso 1.8s ease-out infinite;
-  vertical-align: -6px;
-}
-.reservas-clock::before, .reservas-clock::after {
-  content: ''; position: absolute; width: 5px; height: 5px; border-radius: 50%;
-  background: #ffd9a0; box-shadow: 0 0 4px 1px #ffd9a0;
-  animation: reservas-luces 1.4s ease-in-out infinite;
-}
-.reservas-clock::before { top: -3px; left: -3px; }
-.reservas-clock::after  { bottom: -3px; right: -3px; animation-delay: .7s; }
-.reservas-clock-mini {
-  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
-  background: var(--feria); box-shadow: 0 0 5px 1px rgba(176,96,48,.75);
-  animation: reservas-luces 1.2s ease-in-out infinite;
-  vertical-align: 1px; margin-right: 2px;
-}
-@keyframes reservas-pulso {
-  0%   { box-shadow: 0 0 0 0 rgba(176,96,48,.55); }
-  70%  { box-shadow: 0 0 0 9px rgba(176,96,48,0); }
-  100% { box-shadow: 0 0 0 0 rgba(176,96,48,0); }
-}
-@keyframes reservas-luces {
-  0%, 100% { opacity: .25; transform: scale(.7); }
-  50%      { opacity: 1;   transform: scale(1.15); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .reservas-clock, .reservas-clock::before, .reservas-clock::after, .reservas-clock-mini { animation: none; }
-}
 
 /* ── CARRITO PANEL ── */
 .cart-overlay {
@@ -1315,10 +1256,6 @@ function guardarPedidoPendiente(asesorNombre) {
     const items = carrito.map(i => ({
       catId: i._catId, prodId: i.id, nombre: i.nombre, cantidad: i.qty,
       precioUnit: precioEfectivo(i, modoFeria),
-      // Preventa: el producto todavía no llegó — se manda para que el
-      // Panel de Ventas lo muestre marcado al convertir este pedido en
-      // venta (ver pedidoPendienteConvertir() en admin.html).
-      ...(i.preventa ? { preventa: true } : {}),
     }));
     fetch('/api/pedido-pendiente', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -1489,7 +1426,7 @@ function consultarProductoPorWhatsApp(prodId, catId) {
   const { config } = datos;
   const cat = datos.categorias.find(c => c.id === catId);
   const modoFeria = siteCfg.modoFeria ?? config.modoFeria;
-  const precio = precioEfectivo(p, modoFeria);
+  const precio = precioEfectivo(p, modoFeria, cat?.nombre);
   const carritoItem = carrito.find(i => i._catId === catId && i.id === prodId);
   const qty = carritoItem ? carritoItem.qty : 1;
   const url = window.location.origin + window.location.pathname + '#prod-' + catId + '-' + prodId;
@@ -1524,6 +1461,7 @@ let siteCfg = {
   subtextoBanner:  'Precios especiales por tiempo limitado',
   carritoVisible:  true,
   etiquetas: { oferta: false, feria: true, nuevo: false },
+  preciosPorCategoria: {},
   ofertaBanner: {
     activo: false,
     finOferta: '',
@@ -2009,13 +1947,9 @@ function renderFiltros(categorias) {
   const el = document.getElementById('sidebar-filters');
   if (!el) return;
 
-  const total = categorias.reduce((s, c) => s + (c.productos?.length || 0), 0);
+  const total = categorias.reduce((s, c) => s + productosVisiblesCatalogo(c.productos).length, 0);
   const totalEl = document.getElementById('sidebar-total-count');
   if (totalEl) totalEl.textContent = total + ' productos';
-
-  // Reservas: agrupa productos en preventa de TODAS las categorías — ver
-  // productosEnPreventa()/renderCatalogo(). Solo aparece si hay al menos uno.
-  const totalReservas = categorias.reduce((s, c) => s + (c.productos || []).filter(p => p.preventa).length, 0);
 
   // Botones de categoría con badge (data-cat-id y data-parent listo para subcategorías futuras)
   el.innerHTML =
@@ -2023,12 +1957,8 @@ function renderFiltros(categorias) {
        <span class="sidebar-filter-name">Todos los productos</span>
        <span class="cat-count">${total}</span>
      </button>` +
-    (totalReservas > 0 ? `<button class="sidebar-filter" data-cat-id="__reservas__" data-parent="" onclick="filtrar('__reservas__',this)">
-       <span class="sidebar-filter-name"><span class="reservas-clock-mini" aria-hidden="true"></span>Reservas</span>
-       <span class="cat-count">${totalReservas}</span>
-     </button>` : '') +
     categorias.map(c => {
-      const count = c.productos?.length || 0;
+      const count = productosVisiblesCatalogo(c.productos).length;
       return `<button class="sidebar-filter" data-cat-id="${c.id}" data-parent="" onclick="filtrar('${c.id}',this)">
         <span class="sidebar-filter-name">${c.nombre}</span>
         <span class="cat-count">${count}</span>
@@ -2169,16 +2099,13 @@ function aplicarFiltros() {
 }
 
 // ── CATÁLOGO ───────────────────────────────────────────────────────
-// Junta los productos marcados "En preventa" (ver checkbox en el panel
-// admin → 🕒 Reservas) de TODAS las categorías, conservando la categoría
-// real de cada uno — se usa para armar la sección "Reservas" de arriba sin
-// tocar en nada la categoría original de cada producto.
-function productosEnPreventa(categorias) {
-  const out = [];
-  (categorias || []).forEach(cat => (cat.productos || []).forEach(p => {
-    if (p.preventa) out.push({ p, catId: cat.id, catNombre: cat.nombre });
-  }));
-  return out;
+// Productos con visibleCatalogo === false se ocultan del sitio público
+// (no se pintan tarjetas) pero siguen existiendo en productos.json tal
+// cual — el panel admin (Ventas, Costos, etc.) los sigue usando con
+// normalidad, así se puede seguir vendiendo/registrando internamente
+// algo que no está a la vista del catálogo.
+function productosVisiblesCatalogo(productos) {
+  return (productos || []).filter(p => p.visibleCatalogo !== false);
 }
 
 function renderCatalogo(categorias, config) {
@@ -2188,32 +2115,19 @@ function renderCatalogo(categorias, config) {
     return;
   }
   document.getElementById('empty-search').style.display = 'none';
-
-  // Sección "Reservas": todos los productos en preventa juntos, sin
-  // importar su categoría, para que se encuentren en un solo lugar. Cada
-  // tarjeta usa idPrefix="reservas-" (evita <div id> repetido, ya que el
-  // mismo producto también se pinta más abajo en su categoría real) pero
-  // agregar al carrito/WhatsApp funciona idéntico porque catId/prodId son
-  // siempre los reales — ver renderTarjeta().
-  const reservas = productosEnPreventa(categorias);
-  const seccionReservas = reservas.length ? `
-    <section class="category-section reservas-section" data-cat="__reservas__">
-      <h2 class="category-title reservas-title"><span class="reservas-clock" aria-hidden="true">🕒</span><em>Reservas</em></h2>
-      <p class="category-desc">Todavía no llegaron, pero ya los podés reservar y aprovechar el descuento.</p>
-      <div class="products-grid">
-        ${reservas.map(({ p, catId, catNombre }) => renderTarjeta(p, config, catId, catNombre, 'reservas-')).join('')}
-      </div>
-    </section>` : '';
-
-  document.getElementById('catalog').innerHTML = seccionReservas + categorias.map(cat => `
+  document.getElementById('catalog').innerHTML = categorias.map(cat => {
+    const visibles = productosPorDisponibilidad(productosVisiblesCatalogo(cat.productos));
+    if (!visibles.length) return ''; // categoría sin productos visibles: no se pinta la sección
+    return `
     <section class="category-section" data-cat="${cat.id}">
       <h2 class="category-title"><em>${cat.nombre}</em></h2>
       <p class="category-desc">${cat.descripcion || 'Seleccioná los que te interesan y consultanos por WhatsApp.'}</p>
       <div class="products-grid">
-        ${productosPorDisponibilidad(cat.productos).map(p => renderTarjeta(p, config, cat.id, cat.nombre)).join('')}
+        ${visibles.map(p => renderTarjeta(p, config, cat.id, cat.nombre)).join('')}
       </div>
     </section>
-  `).join('');
+  `;
+  }).join('');
 }
 
 // Orden de exhibición dentro de cada categoría: disponibles primero, los
@@ -2242,15 +2156,6 @@ function stockTag(disponible, stock) {
 }
 
 function estaAgotado(p) {
-  // Preventa: se puede reservar aunque el stock real todavía sea 0/no haya
-  // llegado — ver checkbox "En preventa" en el modal de Productos y
-  // renderTarjeta() más abajo (badge + botón "Reservar"). Si se cargó una
-  // "Cantidad que va a llegar" en el panel Reservas (p.preventaCantidad),
-  // se respeta ese tope — sin cantidad cargada sigue sin límite, como antes.
-  if (p.preventa) {
-    if (typeof p.preventaCantidad === 'number') return (p.preventaReservado || 0) >= p.preventaCantidad;
-    return false;
-  }
   if (typeof p.stock === 'number') return p.stock <= 0;
   return p.disponible === false || p.disponible === 0;
 }
@@ -2296,53 +2201,56 @@ function nombreCategoriaPorId(catId) {
   return cat ? cat.nombre : '';
 }
 
-function renderPrecioBlock(p, config, catNombre) {
-  // siteCfg.mostrarPrecios oculta todos los precios
-  if (siteCfg.mostrarPrecios === false) {
-    return `<span class="no-price">Consultá precio</span>`;
-  }
+// preciosPorCategoria: override por categoría del interruptor general
+// mostrarPrecios. 'mostrar' | 'ocultar' | ausente = Automático (sigue el
+// interruptor general). Clave = nombre de categoría normalizado, mismo
+// criterio que CATEGORIAS_DESCUENTO_AUTO más arriba.
+function mostrarPrecioParaCategoria(catNombre) {
+  const clave = (catNombre || '').trim().toLowerCase();
+  const override = (siteCfg.preciosPorCategoria || {})[clave];
+  if (override === 'mostrar') return true;
+  if (override === 'ocultar') return false;
+  return siteCfg.mostrarPrecios !== false;
+}
 
-  // modoFeria: siteConfig tiene prioridad
+function renderPrecioBlock(p, config, catNombre) {
   const modoFeria = siteCfg.modoFeria ?? config.modoFeria ?? false;
   const moneda    = config.moneda || 'Gs.';
   const pNormal   = p.precioNormal || p.precio || 0;
   const pFeria    = p.precioFeria  || 0;
-  const pDescAuto = precioDescuentoAuto(p, catNombre);
 
-  if (pNormal === 0 && pFeria === 0) return `<span class="no-price">Consultá precio</span>`;
-
-  // Descuento automático por producto (ej. Vestuarios): precio rebajado
-  // permanente, no depende del interruptor Modo Feria — tiene prioridad
-  // sobre el precio feria manual para evitar mostrar dos descuentos a la
-  // vez. Si el admin apagó el automático para este producto, pDescAuto es
-  // null y sigue la lógica normal de abajo (Precio Feria a mano).
-  if (pDescAuto !== null) {
-    return `<div class="price-block">
-      <span class="price-normal tachado">${formatPrecio(pNormal, moneda)}</span>
-      <span class="price-feria activa">${formatPrecio(pDescAuto, moneda)}</span>
-    </div>`;
+  if (modoFeria) {
+    // Modo Feria: TODAS las categorías muestran precio + descuento, sin
+    // excepción — "Precios por Categoría" no aplica acá (solo fuera de
+    // Modo Feria). Esto también cubre Vestuarios (descuento automático).
+    if (pNormal === 0 && pFeria === 0) return `<span class="no-price">Consultá precio</span>`;
+    const pDescAuto = precioDescuentoAuto(p, catNombre);
+    if (pDescAuto !== null) {
+      return `<div class="price-block">
+        <span class="price-normal tachado">${formatPrecio(pNormal, moneda)}</span>
+        <span class="price-feria activa">${formatPrecio(pDescAuto, moneda)}</span>
+      </div>`;
+    }
+    if (pNormal > 0 && pFeria > 0) {
+      return `<div class="price-block">
+        <span class="price-normal tachado">${formatPrecio(pNormal, moneda)}</span>
+        <span class="price-feria activa">${formatPrecio(pFeria, moneda)}</span>
+      </div>`;
+    }
+    if (pFeria > 0 && pNormal === 0) {
+      return `<div class="price-block">
+        <span class="price-feria-label">🏷 Feria</span>
+        <span class="price-feria activa">${formatPrecio(pFeria, moneda)}</span>
+      </div>`;
+    }
+    if (pNormal > 0) return `<span class="card-price">${formatPrecio(pNormal, moneda)}</span>`;
+    return `<span class="no-price">Consultá precio</span>`;
   }
 
-  if (modoFeria && pNormal > 0 && pFeria > 0) {
-    return `<div class="price-block">
-      <span class="price-normal tachado">${formatPrecio(pNormal, moneda)}</span>
-      <span class="price-feria activa">${formatPrecio(pFeria, moneda)}</span>
-    </div>`;
-  }
-  if (modoFeria && pFeria > 0 && pNormal === 0) {
-    return `<div class="price-block">
-      <span class="price-feria-label">🏷 Feria</span>
-      <span class="price-feria activa">${formatPrecio(pFeria, moneda)}</span>
-    </div>`;
-  }
-  if (modoFeria && pNormal > 0 && pFeria === 0) {
-    return `<span class="card-price">${formatPrecio(pNormal, moneda)}</span>`;
-  }
-  if (!modoFeria && pNormal > 0 && pFeria > 0) {
-    return `<div class="price-block">
-      <span class="card-price">${formatPrecio(pNormal, moneda)}</span>
-      <span class="price-normal" style="color:#c8956a;font-size:0.7rem">🏷 Feria: ${formatPrecio(pFeria, moneda)}</span>
-    </div>`;
+  // Fuera de Modo Feria ("Mostrar Precios"): respeta el override por
+  // categoría, y muestra SOLO precio normal, sin tachados ni descuentos.
+  if (!mostrarPrecioParaCategoria(catNombre)) {
+    return `<span class="no-price">Consultá precio</span>`;
   }
   if (pNormal > 0) return `<span class="card-price">${formatPrecio(pNormal, moneda)}</span>`;
   if (pFeria > 0)  return `<span class="card-price">${formatPrecio(pFeria, moneda)}</span>`;
@@ -2352,7 +2260,7 @@ function renderPrecioBlock(p, config, catNombre) {
 function renderEtiquetasSiteCfg(modoFeriaEfectivo, catNombre, p) {
   const et = siteCfg.etiquetas || {};
   const badges = [];
-  const pDescAuto = precioDescuentoAuto(p, catNombre);
+  const pDescAuto = modoFeriaEfectivo ? precioDescuentoAuto(p, catNombre) : null;
   if (pDescAuto !== null) {
     const pct = typeof p.descAutoPct === 'number' ? Math.min(100, Math.max(0, p.descAutoPct)) : 20;
     badges.push(`<span style="background:#eef3ea;color:#4a6741;font-size:.62rem;font-weight:700;padding:2px 9px;border-radius:20px;letter-spacing:.05em;line-height:1">${Math.round(pct)}% OFF</span>`);
@@ -2364,22 +2272,11 @@ function renderEtiquetasSiteCfg(modoFeriaEfectivo, catNombre, p) {
   return `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">${badges.join('')}</div>`;
 }
 
-// idPrefix: solo se usa cuando la MISMA tarjeta se pinta dos veces en la
-// página (ej. una vez en la sección "Reservas" y otra vez en su categoría
-// real más abajo — ver renderCatalogo) para que el id del <div class="card">
-// no se repita dos veces en el HTML. catId/catNombre siguen siendo SIEMPRE
-// los reales del producto (no "__reservas__"), para que agregar al carrito,
-// el stock y el pedido pendiente funcionen exactamente igual desde ahí.
-function renderTarjeta(p, config, catId = '', catNombre = '', idPrefix = '') {
+function renderTarjeta(p, config, catId = '', catNombre = '') {
   const modoFeria    = siteCfg.modoFeria ?? config.modoFeria ?? false;
   const carritoOn    = siteCfg.carritoVisible !== false;
   const agotado      = estaAgotado(p);
-  // Preventa tiene su propia etiqueta ("🕒 Preventa") en vez de la de stock
-  // normal (Disponible/Sin stock/Últimas unidades) — ver checkbox "En
-  // preventa" en el modal de Productos del panel admin.
-  const tag          = p.preventa
-    ? (agotado ? { clase: 'sin-stock', texto: 'Reservas completas' } : { clase: 'urgencia', texto: '🕒 Preventa' })
-    : stockTag(p.disponible, p.stock);
+  const tag          = stockTag(p.disponible, p.stock);
   const imgPrincipal = p.imagen || p.foto1 || '';
   const imgMuestra   = p.imagenMuestra || p.foto2 || imgPrincipal;
   // Hasta 2 fotos extra opcionales (imagenMuestra2/3). Productos viejos que
@@ -2396,23 +2293,12 @@ function renderTarjeta(p, config, catId = '', catNombre = '', idPrefix = '') {
 
   let accionesHTML = '';
   if (agotado) {
-    accionesHTML = `<button class="add-btn" disabled>${p.preventa ? 'Reservas completas' : 'Agotado'}</button>`;
+    accionesHTML = `<button class="add-btn" disabled>Agotado</button>`;
   } else if (carritoOn) {
-    accionesHTML = p.preventa
-      ? `<button class="add-btn reservar" onclick="agregarAlCarrito('${catId}',${p.id})">🕒 Reservar ahora</button>`
-      : (modoFeria
-        ? `<button class="add-btn agregar" onclick="agregarAlCarrito('${catId}',${p.id})">+ Agregar</button>`
-        : `<button class="add-btn interesa" onclick="agregarAlCarrito('${catId}',${p.id})">♡ Me interesa</button>`);
+    accionesHTML = modoFeria
+      ? `<button class="add-btn agregar" onclick="agregarAlCarrito('${catId}',${p.id})">+ Agregar</button>`
+      : `<button class="add-btn interesa" onclick="agregarAlCarrito('${catId}',${p.id})">♡ Me interesa</button>`;
   }
-
-  // Mensaje de preventa: texto cargado en el producto (panel admin) o uno
-  // genérico por defecto si no se cargó ninguno. Si además se cargó una
-  // "Cantidad que va a llegar", se suma cuánto queda para reservar.
-  const _preventaQuedan = typeof p.preventaCantidad === 'number'
-    ? Math.max(0, p.preventaCantidad - (p.preventaReservado || 0)) : null;
-  const preventaHTML = (p.preventa && !agotado)
-    ? `<div style="background:#fff4ee;color:#b06030;font-size:.72rem;line-height:1.35;padding:6px 9px;border-radius:6px;margin-bottom:6px">🕒 ${p.preventaNota ? p.preventaNota : 'Reservá ahora — nos llega la semana que viene. ¡Aprovechá el descuento!'}${_preventaQuedan !== null ? ` <strong>(quedan ${_preventaQuedan})</strong>` : ''}</div>`
-    : '';
 
   const _pDescAutoOrden = precioDescuentoAuto(p, catNombre);
   const _pNormalBase    = p.precioNormal || p.precio || 0;
@@ -2420,7 +2306,7 @@ function renderTarjeta(p, config, catId = '', catNombre = '', idPrefix = '') {
     ? _pDescAutoOrden
     : (_pNormalBase || p.precioFeria || 0);
   return `
-    <div class="card${agotado ? ' agotado' : ''}" id="prod-${idPrefix}${catId}-${p.id}"
+    <div class="card${agotado ? ' agotado' : ''}" id="prod-${catId}-${p.id}"
          data-nombre="${normalizarTexto(p.nombre)}"
          data-precio="${_pSortable}"
          data-disponible="${agotado ? '0' : '1'}">
@@ -2434,8 +2320,7 @@ function renderTarjeta(p, config, catId = '', catNombre = '', idPrefix = '') {
         ${etiquetasHTML}
         <div class="card-name">${p.nombre}</div>
         ${p.descripcion ? `<div class="card-desc">${p.descripcion}</div>` : ''}
-        ${preventaHTML}
-        <div class="card-footer${p.preventa ? ' footer-reservar' : ''}">
+        <div class="card-footer">
           ${precioHTML}
           ${accionesHTML}
         </div>
@@ -2483,18 +2368,23 @@ function productoPorClave(catId, prodId) {
 }
 
 function precioEfectivo(p, modoFeriaFallback, catNombre) {
+  // p._catId lo trae el carrito (ver agregarAlCarrito) para los casos en
+  // que no se pasa catNombre explícito.
+  const catNombreResuelto = catNombre ?? nombreCategoriaPorId(p._catId);
   const pNormal = p.precioNormal || p.precio || 0;
   const pFeria  = p.precioFeria  || 0;
-  if (siteCfg.mostrarPrecios === false) return 0;
   const modoFeria = siteCfg.modoFeria ?? modoFeriaFallback ?? false;
-  // Descuento automático por producto (ej. Vestuarios) tiene prioridad,
-  // igual que en renderPrecioBlock, para que el total del carrito coincida
-  // con el precio que se ve en la tarjeta. p._catId lo trae el carrito
-  // (ver agregarAlCarrito) para los casos en que no se pasa catNombre.
-  const pDescAuto = precioDescuentoAuto(p, catNombre ?? nombreCategoriaPorId(p._catId));
-  if (pDescAuto !== null) return pDescAuto;
-  if (modoFeria && pFeria > 0) return pFeria;
-  return pNormal;
+  if (modoFeria) {
+    // Modo Feria: todas las categorías, con descuento — mismo criterio
+    // que renderPrecioBlock (ignora el override por categoría).
+    const pDescAuto = precioDescuentoAuto(p, catNombreResuelto);
+    if (pDescAuto !== null) return pDescAuto;
+    if (pFeria > 0) return pFeria;
+    return pNormal;
+  }
+  // Fuera de Modo Feria: respeta el override por categoría, solo normal.
+  if (!mostrarPrecioParaCategoria(catNombreResuelto)) return 0;
+  return pNormal || pFeria;
 }
 
 function stockDisponible(p) {
@@ -2503,15 +2393,6 @@ function stockDisponible(p) {
 }
 
 function estaAgotado(p) {
-  // Preventa: se puede reservar aunque el stock real todavía sea 0/no haya
-  // llegado — ver checkbox "En preventa" en el modal de Productos y
-  // renderTarjeta() más abajo (badge + botón "Reservar"). Si se cargó una
-  // "Cantidad que va a llegar" en el panel Reservas (p.preventaCantidad),
-  // se respeta ese tope — sin cantidad cargada sigue sin límite, como antes.
-  if (p.preventa) {
-    if (typeof p.preventaCantidad === 'number') return (p.preventaReservado || 0) >= p.preventaCantidad;
-    return false;
-  }
   if (typeof p.stock === 'number') return p.stock <= 0;
   return p.disponible === false || p.disponible === 0;
 }
@@ -2562,7 +2443,7 @@ function actualizarCarritoUI() {
     if (el) el.remove();
   });
 
-  if (siteCfg.mostrarPrecios !== false && precioTotal > 0) {
+  if (precioTotal > 0) {
     if (descuento > 0) {
       totalRowEl.style.display = '';
       totalRowEl.innerHTML = `<span>Subtotal</span><span style="color:#888">${formatPrecio(subtotal, config.moneda)}</span>`;
@@ -2626,7 +2507,7 @@ function actualizarCarritoUI() {
     return `<div class="cart-item">
       <img src="${imgSrc}" alt="${i.nombre}" onerror="this.style.opacity='.2'">
       <div class="cart-item-info">
-        <div class="cart-item-name">${i.nombre}${i.preventa ? ' <span style="color:#b06030;font-weight:600">🕒 Reserva</span>' : ''}</div>
+        <div class="cart-item-name">${i.nombre}</div>
         ${pe > 0 ? `<div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap">
           ${tieneDescuento ? `<span class="price-normal tachado" style="font-size:.72rem">${formatPrecio(pNormalItem, config.moneda)}</span>` : ''}
           <span class="cart-item-price${tieneDescuento ? ' feria-price' : ''}">${formatPrecio(pe, config.moneda)} c/u${tieneDescuento ? ' 🏷' : ''}</span>
@@ -2676,7 +2557,6 @@ function pedirPorWhatsApp() {
       const pn = i.precioNormal || i.precio || 0;
       const tieneDesc = pe > 0 && pn > 0 && pe < pn;
       return '- ' + i.qty + 'x ' + i.nombre
-        + (i.preventa ? ' (RESERVA — todavía no llega)' : '')
         + (pe > 0 ? ' -- ' + formatPrecio(pe * i.qty, config.moneda) : '')
         + (tieneDesc ? ' (antes ' + formatPrecio(pn * i.qty, config.moneda) + ')' : '');
     }).join('\n');
@@ -2684,7 +2564,7 @@ function pedirPorWhatsApp() {
     if (descuento > 0) msg += '\n\nSubtotal: ' + formatPrecio(subtotal, config.moneda);
     if (descuento > 0) msg += '\nDescuento feria: -' + formatPrecio(descuento, config.moneda);
   } else {
-    const lineas = carrito.map(i => '- ' + i.qty + 'x ' + i.nombre + (i.preventa ? ' (RESERVA — todavía no llega)' : '')).join('\n');
+    const lineas = carrito.map(i => '- ' + i.qty + 'x ' + i.nombre).join('\n');
     msg = 'Hola! Me interesan estos productos y quiero consultar precios:\n\n' + lineas + '\n\nMe podés dar mas info?';
   }
   if (facturaAmtWA > 0 || tcAmtWA > 0) {
