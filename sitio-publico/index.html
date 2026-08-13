@@ -1491,9 +1491,12 @@ async function cargarSiteCfg() {
     }
   } catch(e) {}
 
-  // 2. ownCloud en segundo plano (async, sin bloquear render)
+  // 2. ownCloud en vivo vía función de Netlify (async, sin bloquear render).
+  // Si /api/config todavía no existe (función no creada), cae a /siteConfig.json
+  // estático como respaldo — mismo comportamiento que antes.
   try {
-    const res = await fetch('/siteConfig.json');
+    let res = await fetch('/api/config');
+    if (!res.ok) res = await fetch('/siteConfig.json');
     if (!res.ok) return;
     const json = await res.json();
     if (json && typeof json === 'object') {

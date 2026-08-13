@@ -87,5 +87,8 @@
         "orden": 3
       }
     ]
+  },
+  "preciosPorCategoria": {
+    "vestuarios": "mostrar"
   }
 }
