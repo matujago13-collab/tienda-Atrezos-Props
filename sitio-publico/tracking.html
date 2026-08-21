@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seguí tu pedido — Atrezos & Props</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sage:   #9CAF88;
+  --bosque: #506549;
+  --crema:  #f5f0ea;
+  --negro:  #1a1a1a;
+  --blanco: #ffffff;
+  --feria:  #b06030;
+  --danger: #b85c5c;
+  --border: #e3ddd2;
+  --muted:  #8a8378;
+  --shadow: 0 2px 12px rgba(0,0,0,0.07);
+}
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Jost', sans-serif; background: var(--crema); color: var(--negro); min-height: 100vh; }
+h1, h2 { font-family: 'Cormorant Garamond', serif; font-weight: 600; }
+
+nav { padding: 16px 20px; background: var(--blanco); border-bottom: 1px solid var(--border); }
+.nav-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.35rem; font-weight: 600; color: var(--bosque); text-decoration: none; }
+
+main { max-width: 560px; margin: 0 auto; padding: 30px 18px 60px; }
+
+.buscador { background: var(--blanco); border: 1px solid var(--border); border-radius: 10px; padding: 22px; box-shadow: var(--shadow); text-align: center; }
+.buscador h1 { font-size: 1.5rem; color: var(--bosque); margin-bottom: 6px; }
+.buscador p { font-size: .85rem; color: var(--muted); margin-bottom: 16px; }
+.buscador input { width: 100%; padding: 11px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: .95rem; font-family: 'Jost', sans-serif; margin-bottom: 10px; }
+.buscador button { width: 100%; padding: 11px; background: var(--bosque); color: #fff; border: none; border-radius: 6px; font-size: .95rem; font-family: 'Jost', sans-serif; cursor: pointer; }
+.buscador button:hover { opacity: .92; }
+.error-msg { color: var(--danger); font-size: .82rem; margin-top: 10px; min-height: 1.1em; }
+
+.resultado { background: var(--blanco); border: 1px solid var(--border); border-radius: 10px; padding: 24px; box-shadow: var(--shadow); }
+.resultado h2 { font-size: 1.3rem; color: var(--bosque); margin-bottom: 2px; }
+.resultado .id-pedido { font-size: .74rem; color: var(--muted); margin-bottom: 18px; }
+.resultado .datos-extra { font-size: .82rem; color: var(--muted); margin-bottom: 18px; line-height: 1.6; }
+
+.items { font-size: .85rem; margin-bottom: 20px; padding: 12px; background: var(--crema); border-radius: 6px; }
+.items div { display: flex; justify-content: space-between; padding: 2px 0; }
+.items .total-row { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 6px; font-weight: 600; }
+
+.timeline { list-style: none; }
+.timeline li { position: relative; padding: 0 0 22px 30px; border-left: 2px solid var(--border); }
+.timeline li:last-child { border-left: 2px solid transparent; padding-bottom: 0; }
+.timeline li::before {
+  content: ''; position: absolute; left: -8px; top: 0; width: 14px; height: 14px;
+  border-radius: 50%; background: var(--blanco); border: 2px solid var(--border);
+}
+.timeline li.hecho { border-left-color: var(--bosque); }
+.timeline li.hecho::before { background: var(--bosque); border-color: var(--bosque); }
+.timeline li.actual::before { background: var(--feria); border-color: var(--feria); box-shadow: 0 0 0 4px rgba(176,96,48,.15); }
+.timeline li .label { font-size: .92rem; font-weight: 500; color: var(--muted); }
+.timeline li.hecho .label { color: var(--negro); font-weight: 600; }
+.timeline li.actual .label { color: var(--feria); }
+.timeline li .fecha { font-size: .72rem; color: var(--muted); margin-top: 2px; }
+
+.estado-final { padding: 14px; border-radius: 6px; font-size: .9rem; font-weight: 600; text-align: center; margin-bottom: 18px; }
+.estado-final.cancelado { background: #fbeaea; color: var(--danger); }
+.estado-final.devuelto { background: #fbeaea; color: var(--danger); }
+
+.volver { display: block; text-align: center; margin-top: 18px; font-size: .82rem; color: var(--bosque); cursor: pointer; text-decoration: underline; }
+.oculto { display: none; }
+</style>
+</head>
+<body>
+
+<nav><a href="/" class="nav-logo">🌿 Atrezos &amp; Props</a></nav>
+
+<main>
+  <div class="buscador" id="buscador">
+    <h1>Seguí tu pedido</h1>
+    <p>Ingresá el número de pedido que te compartimos por WhatsApp.</p>
+    <input type="text" id="input-id" placeholder="Ej: vmsj9ycd1t34jn" onkeydown="if(event.key==='Enter')buscar()">
+    <button onclick="buscar()">Buscar</button>
+    <div class="error-msg" id="error-msg"></div>
+  </div>
+
+  <div class="resultado oculto" id="resultado"></div>
+  <div class="volver oculto" id="volver" onclick="volverABuscar()">← Buscar otro pedido</div>
+</main>
+
+<script>
+const LABEL_TIPO_ENTREGA = { encomienda: '📦 Encomienda', delivery: '🛵 Delivery', retiro: '🏬 Retiro en tienda' };
+
+function idDesdeURL() {
+  try { return new URLSearchParams(location.search).get('id') || ''; } catch(e) { return ''; }
+}
+
+async function buscar() {
+  const idInput = document.getElementById('input-id');
+  const id = (idInput.value || '').trim();
+  const errEl = document.getElementById('error-msg');
+  errEl.textContent = '';
+  if (!id) { errEl.textContent = 'Ingresá tu número de pedido.'; return; }
+  errEl.textContent = 'Buscando…';
+  try {
+    const res = await fetch('/api/tracking?id=' + encodeURIComponent(id));
+    const data = await res.json().catch(() => null);
+    if (!data || !data.ok) {
+      errEl.textContent = data?.error || 'No encontramos un pedido con ese número. Revisalo e intentá de nuevo.';
+      return;
+    }
+    errEl.textContent = '';
+    mostrarResultado(data.pedido);
+    // Deja el id en la URL para que el link se pueda volver a abrir directo.
+    try { history.replaceState(null, '', '?id=' + encodeURIComponent(id)); } catch(e) {}
+  } catch (e) {
+    errEl.textContent = 'No se pudo conectar. Revisá tu conexión e intentá de nuevo.';
+  }
+}
+
+function fmtGs(n) { return 'Gs. ' + Math.round(n || 0).toLocaleString('es-PY'); }
+function fmtFecha(iso) {
+  if (!iso) return '';
+  try { return new Date(iso).toLocaleString('es-PY', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); }
+  catch(e) { return ''; }
+}
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+function mostrarResultado(p) {
+  document.getElementById('buscador').classList.add('oculto');
+  document.getElementById('volver').classList.remove('oculto');
+  const resEl = document.getElementById('resultado');
+  resEl.classList.remove('oculto');
+
+  const esFinalNegativo = (p.pasos || []).some(x => x.clave === 'cancelado' || x.clave === 'devuelto');
+
+  const datosExtra = [
+    p.tipoEntrega ? LABEL_TIPO_ENTREGA[p.tipoEntrega] || '' : '',
+    p.direccionEntrega ? `Dirección: ${esc(p.direccionEntrega)}` : '',
+    p.transportadora ? `Transportadora: ${esc(p.transportadora)}` : '',
+  ].filter(Boolean).join(' · ');
+
+  resEl.innerHTML = `
+    <h2>${esc(p.clienteNombre || 'Tu pedido')}</h2>
+    <div class="id-pedido">Pedido: ${esc(p.id)}</div>
+    ${datosExtra ? `<div class="datos-extra">${datosExtra}</div>` : ''}
+    ${esFinalNegativo ? `<div class="estado-final ${p.pasos[0].clave}">${p.pasos[0].label}</div>` : ''}
+    ${(p.items || []).length ? `
+    <div class="items">
+      ${p.items.map(it => `<div><span>${it.cantidad}x ${esc(it.nombre)}</span></div>`).join('')}
+      ${p.total ? `<div class="total-row"><span>Total</span><span>${fmtGs(p.total)}</span></div>` : ''}
+    </div>` : ''}
+    ${!esFinalNegativo ? `
+    <ul class="timeline">
+      ${(p.pasos || []).map(paso => `
+        <li class="${paso.hecho ? 'hecho' : ''}${paso.actual ? ' actual' : ''}">
+          <div class="label">${esc(paso.label)}</div>
+          ${paso.fecha ? `<div class="fecha">${fmtFecha(paso.fecha)}</div>` : ''}
+        </li>`).join('')}
+    </ul>` : ''}
+  `;
+}
+
+function volverABuscar() {
+  document.getElementById('resultado').classList.add('oculto');
+  document.getElementById('volver').classList.add('oculto');
+  document.getElementById('buscador').classList.remove('oculto');
+  document.getElementById('error-msg').textContent = '';
+  try { history.replaceState(null, '', location.pathname); } catch(e) {}
+}
+
+// Si el link ya trae ?id=... (el que se manda por WhatsApp), busca directo.
+const idInicial = idDesdeURL();
+if (idInicial) {
+  document.getElementById('input-id').value = idInicial;
+  buscar();
+}
+</script>
+</body>
+</html>
