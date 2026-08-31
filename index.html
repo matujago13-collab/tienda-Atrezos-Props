@@ -1938,6 +1938,62 @@ function inicializar() {
   renderFiltros(categorias);
   renderCatalogo(categorias, config);
   actualizarCarritoUI();
+  aplicarFiltroURL();
+}
+
+// ── LINK DIRECTO A PRODUCTO/CATEGORÍA ────────────────────────────────
+// Permite compartir un link tipo tusitio.com/?producto=301 o
+// ?categoria=<id-de-categoria> (los botones "🔗 Copiar link" del admin
+// arman esa URL) para que el cliente vea solo esa tarjeta o esa sección
+// al abrirlo, sin tener que buscarla en todo el catálogo. No toca
+// productos.json ni el catálogo normal — es puramente de exhibición en
+// el navegador del cliente.
+function aplicarFiltroURL() {
+  const params    = new URLSearchParams(window.location.search);
+  const prodParam = params.get('producto');
+  const catParam  = params.get('categoria');
+  if (!prodParam && !catParam) return;
+
+  // Categoría dueña del producto (si no vino ?categoria= explícita)
+  let catId = catParam || '';
+  if (prodParam && !catId) {
+    for (const cat of (datos?.categorias || [])) {
+      if ((cat.productos || []).some(p => String(p.id) === String(prodParam))) { catId = cat.id; break; }
+    }
+  }
+  const btn = catId && document.querySelector(`.sidebar-filter[data-cat-id="${CSS.escape(catId)}"]`);
+  if (btn) filtrar(catId, btn);
+
+  if (prodParam) {
+    document.querySelectorAll('.card[data-prod-id]').forEach(card => {
+      card.style.display = (card.dataset.prodId === String(prodParam)) ? '' : 'none';
+    });
+    const countEl = document.getElementById('catalog-results-count');
+    if (countEl) countEl.textContent = '1 producto';
+    const emptyEl = document.getElementById('empty-search');
+    if (emptyEl) emptyEl.style.display = 'none';
+    mostrarBannerFiltroURL('Estás viendo un producto puntual.');
+    setTimeout(() => {
+      const card = document.querySelector(`.card[data-prod-id="${CSS.escape(String(prodParam))}"]`);
+      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 150);
+  } else if (catParam) {
+    mostrarBannerFiltroURL('Estás viendo una categoría puntual.');
+  }
+}
+
+// Aviso arriba del catálogo con un link para volver a ver todo — se
+// inserta una sola vez aunque aplicarFiltroURL corra de nuevo.
+function mostrarBannerFiltroURL(texto) {
+  if (document.getElementById('filtro-url-banner')) return;
+  const catalog = document.getElementById('catalog');
+  if (!catalog || !catalog.parentElement) return;
+  const banner = document.createElement('div');
+  banner.id = 'filtro-url-banner';
+  banner.style.cssText = 'max-width:900px;margin:0 auto 1rem;padding:.7rem 1rem;background:var(--crema,#f5f0ea);border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:1rem;font-size:.9rem;flex-wrap:wrap';
+  banner.innerHTML = `<span>${texto}</span>
+    <a href="${window.location.pathname}" style="font-weight:600;white-space:nowrap;color:var(--bosque,#506549)">Ver catálogo completo →</a>`;
+  catalog.parentElement.insertBefore(banner, catalog);
 }
 
 // ── SIDEBAR TOGGLE ────────────────────────────────────────────────
@@ -2340,6 +2396,7 @@ function renderTarjeta(p, config, catId = '', catNombre = '') {
     : (_pNormalBase || p.precioFeria || 0);
   return `
     <div class="card${agotado ? ' agotado' : ''}" id="prod-${catId}-${p.id}"
+         data-prod-id="${p.id}"
          data-nombre="${normalizarTexto(p.nombre)}"
          data-precio="${_pSortable}"
          data-disponible="${agotado ? '0' : '1'}"
