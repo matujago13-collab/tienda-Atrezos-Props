@@ -53,7 +53,11 @@ main { max-width: 560px; margin: 0 auto; padding: 30px 18px 60px; }
 }
 .timeline li.hecho { border-left-color: var(--bosque); }
 .timeline li.hecho::before { background: var(--bosque); border-color: var(--bosque); }
-.timeline li.actual::before { background: var(--feria); border-color: var(--feria); box-shadow: 0 0 0 4px rgba(176,96,48,.15); }
+.timeline li.actual::before { background: var(--feria); border-color: var(--feria); animation: pulso-actual 1.8s ease-in-out infinite; }
+@keyframes pulso-actual {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(176,96,48,.18); }
+  50%      { box-shadow: 0 0 0 10px rgba(176,96,48,.04); }
+}
 .timeline li .label { font-size: .92rem; font-weight: 500; color: var(--muted); }
 .timeline li.hecho .label { color: var(--negro); font-weight: 600; }
 .timeline li.actual .label { color: var(--feria); }
