@@ -3,6 +3,10 @@ node_modules/
 *.jpeg
 *.png
 *.webp
+
+# Excepción: íconos de la PWA (empaque/venta rápida) — son parte del
+# sitio, no fotos de producto (esas siguen viviendo en ownCloud, nunca acá).
+!sitio-publico/icons/*.png
 .netlify/
 .env
 costos-internos.json
@@ -10,6 +14,8 @@ notas-pendientes.json
 clientes.json
 ventas.json
 vendedores.json
+productos-stock-sync-estado.json
+ventas-movil-vistas-whatsapp.json
 
 # ── Historial/Deshacer: copias de versiones anteriores de los archivos de
 # arriba (ver writeJsonAtomic en admin-server.js). Mismo criterio: nunca a git.
