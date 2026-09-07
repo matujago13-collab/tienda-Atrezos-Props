@@ -21,3 +21,8 @@
   from = "/api/actividad-reciente"
   to   = "/.netlify/functions/actividad-reciente"
   status = 200
+
+[[redirects]]
+  from = "/api/tracking"
+  to   = "/.netlify/functions/tracking"
+  status = 200
