@@ -64,6 +64,7 @@ main { max-width: 560px; margin: 0 auto; padding: 30px 18px 60px; }
 .estado-final.devuelto { background: #fbeaea; color: var(--danger); }
 
 .volver { display: block; text-align: center; margin-top: 18px; font-size: .82rem; color: var(--bosque); cursor: pointer; text-decoration: underline; }
+.auto-nota { text-align: center; font-size: .72rem; color: var(--muted); margin-top: 16px; }
 .oculto { display: none; }
 </style>
 </head>
@@ -91,6 +92,30 @@ function idDesdeURL() {
   try { return new URLSearchParams(location.search).get('id') || ''; } catch(e) { return ''; }
 }
 
+// Mientras el resultado está en pantalla, se vuelve a pedir el estado cada
+// 15s SIN que el cliente tenga que tocar "Buscar" de nuevo — así ve pasar
+// "Empaquetado → En camino → Entregado" (etc.) en tiempo real si deja la
+// página abierta. idEnPantalla + pollHandle controlan ese refresco.
+let idEnPantalla = '';
+let pollHandle = null;
+
+function detenerAutoRefresco() {
+  if (pollHandle) { clearInterval(pollHandle); pollHandle = null; }
+  idEnPantalla = '';
+}
+
+async function actualizarSilencioso() {
+  if (!idEnPantalla) return;
+  try {
+    const res = await fetch('/api/tracking?id=' + encodeURIComponent(idEnPantalla));
+    const data = await res.json().catch(() => null);
+    if (data && data.ok) mostrarResultado(data.pedido, { silencioso: true });
+  } catch (e) {
+    // Sin conexión momentánea: no se muestra error, se reintenta solo en
+    // el próximo tick — el cliente no tiene por qué enterarse.
+  }
+}
+
 async function buscar() {
   const idInput = document.getElementById('input-id');
   const id = (idInput.value || '').trim();
@@ -109,6 +134,9 @@ async function buscar() {
     mostrarResultado(data.pedido);
     // Deja el id en la URL para que el link se pueda volver a abrir directo.
     try { history.replaceState(null, '', '?id=' + encodeURIComponent(id)); } catch(e) {}
+    idEnPantalla = id;
+    if (pollHandle) clearInterval(pollHandle);
+    pollHandle = setInterval(actualizarSilencioso, 15000);
   } catch (e) {
     errEl.textContent = 'No se pudo conectar. Revisá tu conexión e intentá de nuevo.';
   }
@@ -124,7 +152,8 @@ function esc(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 }
 
-function mostrarResultado(p) {
+function mostrarResultado(p, opts) {
+  opts = opts || {};
   document.getElementById('buscador').classList.add('oculto');
   document.getElementById('volver').classList.remove('oculto');
   const resEl = document.getElementById('resultado');
@@ -156,10 +185,12 @@ function mostrarResultado(p) {
           ${paso.fecha ? `<div class="fecha">${fmtFecha(paso.fecha)}</div>` : ''}
         </li>`).join('')}
     </ul>` : ''}
+    ${!esFinalNegativo ? `<div class="auto-nota">Esta página se actualiza sola — podés dejarla abierta.</div>` : ''}
   `;
 }
 
 function volverABuscar() {
+  detenerAutoRefresco();
   document.getElementById('resultado').classList.add('oculto');
   document.getElementById('volver').classList.add('oculto');
   document.getElementById('buscador').classList.remove('oculto');
