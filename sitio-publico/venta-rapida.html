@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Venta rápida — Atrezos & Props</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#506549">
+<link rel="manifest" href="/manifest-venta-rapida.json">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Venta rápida">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bosque: #506549; --bosque-d: #3e5039; --crema: #f5f0ea;
+    --border: #e3ddd2; --muted: #8a8378; --texto: #2c2a26;
+    --danger: #b23b3b; --ok: #3a6b2f; --feria: #c9922a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Jost', sans-serif; background: var(--crema); color: var(--texto); }
+  h1, h2 { font-family: 'Cormorant Garamond', serif; }
+  header { background: var(--bosque); color: #fff; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; position: sticky; top: 0; z-index: 20; }
+  header h1 { margin: 0; font-size: 1.3rem; font-weight: 700; }
+  .estado-conexion { font-size: .72rem; opacity: .85; }
+  main { max-width: 640px; margin: 0 auto; padding: 16px 12px 100px; }
+  .gate { max-width: 340px; margin: 80px auto; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 22px; text-align: center; }
+  .gate input { width: 100%; box-sizing: border-box; padding: 9px 10px; border: 1px solid var(--border); border-radius: 5px; font-size: .95rem; margin: 10px 0; }
+  .gate button { width: 100%; padding: 10px; background: var(--bosque); color: #fff; border: none; border-radius: 5px; font-size: .95rem; cursor: pointer; }
+  .gate .error { color: var(--danger); font-size: .78rem; min-height: 1em; }
+  section { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; }
+  section h2 { margin: 0 0 10px; font-size: 1.05rem; }
+  input[type=text], input[type=search], textarea, select { width: 100%; box-sizing: border-box; padding: 9px 10px; border: 1px solid var(--border); border-radius: 5px; font-size: .92rem; font-family: inherit; color: var(--texto); }
+  textarea { resize: vertical; min-height: 50px; }
+  .resultados { margin-top: 8px; max-height: 260px; overflow-y: auto; }
+  .fila-prod { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 4px; border-bottom: 1px solid var(--border); }
+  .fila-prod:last-child { border-bottom: none; }
+  .fila-prod .info { font-size: .85rem; line-height: 1.35; }
+  .fila-prod .nombre { font-weight: 600; }
+  .fila-prod .detalle { font-size: .74rem; color: var(--muted); }
+  .fila-prod .detalle.sinstock { color: var(--danger); }
+  .btn-mini { padding: 6px 12px; background: var(--bosque); color: #fff; border: none; border-radius: 14px; font-size: .78rem; cursor: pointer; white-space: nowrap; }
+  .carrito-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 9px 2px; border-bottom: 1px dashed var(--border); }
+  .carrito-item:last-child { border-bottom: none; }
+  .carrito-item .nombre { font-weight: 600; font-size: .88rem; }
+  .carrito-item .sub { font-size: .74rem; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .stepper { display: flex; align-items: center; gap: 6px; }
+  .stepper button { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--border); background: #fff; font-size: 1rem; cursor: pointer; line-height: 1; }
+  .stepper span { min-width: 20px; text-align: center; font-size: .88rem; }
+  .quitar { color: var(--danger); font-size: .72rem; cursor: pointer; background: none; border: none; padding: 0; text-decoration: underline; }
+  .preventa-chip { display: inline-flex; align-items: center; gap: 4px; font-size: .72rem; color: var(--feria); cursor: pointer; }
+  .vacio { text-align: center; color: var(--muted); font-size: .85rem; padding: 16px 10px; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+  .tab { flex: 1; padding: 9px 6px; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: var(--texto); font-size: .85rem; cursor: pointer; text-align: center; }
+  .tab.activo { border-color: var(--bosque); background: var(--bosque); color: #fff; font-weight: 600; }
+  .total { font-size: 1.15rem; font-weight: 700; text-align: right; margin: 4px 0 12px; }
+  .btn-confirmar { width: 100%; padding: 13px; background: var(--bosque); color: #fff; border: none; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer; }
+  .btn-confirmar:disabled { background: var(--muted); cursor: not-allowed; }
+  .mensaje { margin-top: 10px; font-size: .85rem; border-radius: 6px; padding: 10px 12px; }
+  .mensaje.ok { background: #e5f0e2; color: var(--ok); }
+  .mensaje.error { background: #fbe9e9; color: var(--danger); }
+  .mensaje.warn { background: #fdf2e9; color: #a3691f; }
+  .mensaje button { margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🛒 Venta rápida</h1>
+  <span class="estado-conexion" id="estado-conexion">Cargando…</span>
+</header>
+
+<main id="main">
+  <div class="gate" id="gate" style="display:none">
+    <h2 style="margin:0 0 6px">Acceso de venta rápida</h2>
+    <p style="font-size:.82rem;color:var(--muted);margin:0">Pedile la clave a Vardam si no la tenés.</p>
+    <input type="password" id="gate-clave" placeholder="Clave de venta rápida" onkeydown="if(event.key==='Enter')intentarClave()">
+    <button onclick="intentarClave()">Entrar</button>
+    <div class="error" id="gate-error"></div>
+  </div>
+
+  <div id="contenido" style="display:none">
+    <section>
+      <h2>Buscar producto</h2>
+      <input type="search" id="buscar" placeholder="Nombre o #id" oninput="renderResultados()">
+      <div class="resultados" id="resultados"></div>
+    </section>
+
+    <section>
+      <h2>Carrito</h2>
+      <div id="carrito"><div class="vacio">Todavía no agregaste productos.</div></div>
+    </section>
+
+    <section>
+      <h2>Datos de la venta</h2>
+      <div class="tabs" id="tabs-estado"></div>
+      <input type="text" id="cliente-nombre" placeholder="Nombre del cliente" style="margin-bottom:8px">
+      <input type="text" id="cliente-celular" placeholder="Celular (opcional)" style="margin-bottom:8px">
+      <textarea id="nota-interna" placeholder="Nota interna (opcional)"></textarea>
+    </section>
+
+    <div class="total" id="total">Gs. 0</div>
+    <button class="btn-confirmar" id="btn-confirmar" onclick="confirmarVenta()">Confirmar venta</button>
+    <div id="mensaje"></div>
+  </div>
+</main>
+
+<script>
+const CLAVE_SK = 'ap_ventarapida_clave';
+const PENDIENTE_SK = 'ap_ventarapida_pendiente'; // venta que descontó stock pero no se guardó — ver reintentarGuardarVenta()
+const ESTADOS = [
+  { key: 'reservado', label: '📌 Reservado' },
+  { key: 'pagada',    label: '💵 Pagada' },
+];
+let clave = localStorage.getItem(CLAVE_SK) || '';
+let catalogoFlat = [];
+let carrito = [];
+let estadoVenta = 'reservado';
+let enviando = false;
+let ventaPendienteReintento = null;
+try { ventaPendienteReintento = JSON.parse(localStorage.getItem(PENDIENTE_SK) || 'null'); } catch(e) {}
+
+function normalizarTexto(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+function formatGs(n) { return 'Gs. ' + Math.round(n || 0).toLocaleString('es-PY'); }
+
+function mostrarGate(msg) {
+  document.getElementById('gate').style.display = '';
+  document.getElementById('contenido').style.display = 'none';
+  document.getElementById('gate-error').textContent = msg || '';
+}
+function ocultarGate() {
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('contenido').style.display = '';
+}
+
+function intentarClave() {
+  clave = document.getElementById('gate-clave').value.trim();
+  validarClave();
+}
+
+// No hay endpoint de "solo validar" — se aprovecha que /api/venta-rapida
+// devuelve 401 con clave mala y 400 (u otro código) con clave buena pero
+// body vacío, para confirmar la clave sin mandar ninguna venta de prueba.
+async function validarClave() {
+  const estadoEl = document.getElementById('estado-conexion');
+  estadoEl.textContent = 'Verificando…';
+  try {
+    const res = await fetch('/api/venta-rapida', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-venta-key': clave },
+      body: '{}',
+    });
+    if (res.status === 401) {
+      mostrarGate(clave ? 'Clave incorrecta.' : '');
+      estadoEl.textContent = 'Sin acceso';
+      return;
+    }
+    try { localStorage.setItem(CLAVE_SK, clave); } catch(e) {}
+    ocultarGate();
+    estadoEl.textContent = '✓ Listo';
+    cargarCatalogo();
+  } catch (e) {
+    estadoEl.textContent = '⚠ Sin conexión';
+  }
+}
+
+async function cargarCatalogo() {
+  const estadoEl = document.getElementById('estado-conexion');
+  try {
+    const res = await fetch('/api/productos');
+    const data = await res.json().catch(() => null);
+    const categorias = (data && data.categorias) || [];
+    catalogoFlat = [];
+    categorias.forEach(cat => (cat.productos || []).forEach(p => {
+      if (p.disponible === false) return;
+      catalogoFlat.push({
+        catId: cat.id, catNombre: cat.nombre,
+        prodId: p.id, nombre: p.nombre,
+        precio: typeof p.precio === 'number' ? p.precio : (p.precioNormal || 0),
+        stock: typeof p.stock === 'number' ? p.stock : null,
+        preventaDisponible: typeof p.preventaCantidad === 'number'
+          ? Math.max(0, p.preventaCantidad - (p.preventaReservado || 0)) : 0,
+      });
+    }));
+    estadoEl.textContent = '✓ Catálogo actualizado ' + new Date().toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' });
+    renderResultados();
+    renderTabsEstado();
+    mostrarPendienteSiHay();
+  } catch (e) {
+    estadoEl.textContent = '⚠ No se pudo cargar el catálogo';
+  }
+}
+
+function renderTabsEstado() {
+  const cont = document.getElementById('tabs-estado');
+  cont.innerHTML = ESTADOS.map(e =>
+    `<div class="tab ${e.key === estadoVenta ? 'activo' : ''}" onclick="elegirEstado('${e.key}')">${e.label}</div>`
+  ).join('');
+}
+function elegirEstado(key) { estadoVenta = key; renderTabsEstado(); }
+
+function renderResultados() {
+  const q = normalizarTexto(document.getElementById('buscar').value.trim());
+  const cont = document.getElementById('resultados');
+  if (!q) { cont.innerHTML = ''; return; }
+  const matches = catalogoFlat.filter(p =>
+    normalizarTexto(p.nombre).includes(q) || String(p.prodId).includes(q)
+  ).slice(0, 25);
+  if (!matches.length) { cont.innerHTML = '<div class="vacio">Sin resultados.</div>'; return; }
+  cont.innerHTML = matches.map(p => {
+    const sinStock = p.stock !== null && p.stock <= 0;
+    const detalle = p.stock !== null
+      ? `Stock: ${p.stock}${p.preventaDisponible > 0 ? ' · Preventa: ' + p.preventaDisponible : ''}`
+      : 'Sin control de stock';
+    return `<div class="fila-prod">
+      <div class="info">
+        <div class="nombre">${escapeHtml(p.nombre)}</div>
+        <div class="detalle ${sinStock ? 'sinstock' : ''}">${p.catNombre} · ${formatGs(p.precio)} · ${detalle}</div>
+      </div>
+      <button class="btn-mini" onclick="agregarAlCarrito('${escapeAttr(p.catId)}','${escapeAttr(p.prodId)}')">Agregar</button>
+    </div>`;
+  }).join('');
+}
+
+function escapeHtml(s) { return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escapeAttr(s) { return String(s).replace(/'/g, "\\'"); }
+
+function agregarAlCarrito(catId, prodId) {
+  const p = catalogoFlat.find(x => String(x.catId) === String(catId) && String(x.prodId) === String(prodId));
+  if (!p) return;
+  const existente = carrito.find(x => String(x.catId) === String(catId) && String(x.prodId) === String(prodId));
+  if (existente) { existente.cantidad++; }
+  else {
+    carrito.push({
+      catId: p.catId, prodId: p.prodId, nombre: p.nombre,
+      cantidad: 1, precioUnit: p.precio,
+      preventa: p.stock !== null && p.stock <= 0 && p.preventaDisponible > 0,
+    });
+  }
+  renderCarrito();
+}
+function cambiarCantidad(idx, delta) {
+  carrito[idx].cantidad = Math.max(1, carrito[idx].cantidad + delta);
+  renderCarrito();
+}
+function quitarDelCarrito(idx) { carrito.splice(idx, 1); renderCarrito(); }
+function togglePreventa(idx) { carrito[idx].preventa = !carrito[idx].preventa; renderCarrito(); }
+
+function renderCarrito() {
+  const cont = document.getElementById('carrito');
+  if (!carrito.length) {
+    cont.innerHTML = '<div class="vacio">Todavía no agregaste productos.</div>';
+  } else {
+    cont.innerHTML = carrito.map((it, idx) => `
+      <div class="carrito-item">
+        <div>
+          <div class="nombre">${escapeHtml(it.nombre)}</div>
+          <div class="sub">
+            <span class="stepper">
+              <button onclick="cambiarCantidad(${idx},-1)">−</button>
+              <span>${it.cantidad}</span>
+              <button onclick="cambiarCantidad(${idx},1)">+</button>
+            </span>
+            <span>${formatGs(it.precioUnit)} c/u</span>
+            <span class="preventa-chip" onclick="togglePreventa(${idx})">
+              <input type="checkbox" ${it.preventa ? 'checked' : ''} onclick="event.stopPropagation();togglePreventa(${idx})"> preventa
+            </span>
+            <button class="quitar" onclick="quitarDelCarrito(${idx})">quitar</button>
+          </div>
+        </div>
+        <div style="font-weight:600">${formatGs(it.cantidad * it.precioUnit)}</div>
+      </div>
+    `).join('');
+  }
+  const total = carrito.reduce((acc, it) => acc + it.cantidad * it.precioUnit, 0);
+  document.getElementById('total').textContent = formatGs(total);
+}
+
+function mostrarMensaje(tipo, html) {
+  document.getElementById('mensaje').innerHTML = `<div class="mensaje ${tipo}">${html}</div>`;
+}
+function limpiarMensaje() { document.getElementById('mensaje').innerHTML = ''; }
+
+function limpiarFormulario() {
+  carrito = [];
+  document.getElementById('cliente-nombre').value = '';
+  document.getElementById('cliente-celular').value = '';
+  document.getElementById('nota-interna').value = '';
+  renderCarrito();
+}
+
+function guardarPendiente(venta) {
+  ventaPendienteReintento = venta;
+  try { localStorage.setItem(PENDIENTE_SK, JSON.stringify(venta)); } catch(e) {}
+}
+function borrarPendiente() {
+  ventaPendienteReintento = null;
+  try { localStorage.removeItem(PENDIENTE_SK); } catch(e) {}
+}
+function mostrarPendienteSiHay() {
+  if (!ventaPendienteReintento) return;
+  mostrarMensaje('warn',
+    `Quedó una venta de <b>${escapeHtml(ventaPendienteReintento.clienteNombre || '')}</b> con el stock ya descontado ` +
+    `pero sin guardar el registro. Probá guardarla de nuevo antes de seguir vendiendo.` +
+    `<br><button class="btn-mini" style="margin-top:8px" onclick="reintentarGuardarVenta()">Reintentar guardar el registro</button>`);
+}
+
+async function confirmarVenta() {
+  if (enviando) return;
+  limpiarMensaje();
+  const clienteNombre = document.getElementById('cliente-nombre').value.trim();
+  const celular = document.getElementById('cliente-celular').value.trim();
+  const nota = document.getElementById('nota-interna').value.trim();
+  if (!clienteNombre) { mostrarMensaje('error', 'Falta el nombre del cliente.'); return; }
+  if (!carrito.length) { mostrarMensaje('error', 'El carrito está vacío.'); return; }
+
+  const notaInterna = [celular ? ('Cel: ' + celular) : '', nota].filter(Boolean).join(' — ');
+  const payload = {
+    clienteNombre,
+    notaInterna,
+    estado: estadoVenta,
+    items: carrito.map(it => ({
+      catId: it.catId, prodId: it.prodId, nombre: it.nombre,
+      cantidad: it.cantidad, precioUnit: it.precioUnit,
+      ...(it.preventa ? { preventa: true } : {}),
+    })),
+  };
+
+  enviando = true;
+  const btn = document.getElementById('btn-confirmar');
+  btn.disabled = true; btn.textContent = 'Enviando…';
+  try {
+    const res = await fetch('/api/venta-rapida', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-venta-key': clave },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => null);
+    if (res.status === 401) {
+      mostrarGate('Tu clave dejó de ser válida — volvé a entrar.');
+    } else if (data && data.ok) {
+      mostrarMensaje('ok', '✓ Venta guardada — stock actualizado.');
+      limpiarFormulario();
+      cargarCatalogo(); // refresca stock mostrado
+    } else if (res.status === 207 && data && data.stockActualizado) {
+      guardarPendiente(data.venta);
+      limpiarFormulario();
+      mostrarPendienteSiHay();
+      cargarCatalogo();
+    } else {
+      mostrarMensaje('error', (data && data.error) || 'No se pudo guardar la venta — probá de nuevo.');
+    }
+  } catch (e) {
+    mostrarMensaje('error', 'Sin conexión — probá de nuevo.');
+  } finally {
+    enviando = false;
+    btn.disabled = false; btn.textContent = 'Confirmar venta';
+  }
+}
+
+async function reintentarGuardarVenta() {
+  if (!ventaPendienteReintento) return;
+  mostrarMensaje('warn', 'Reintentando guardar el registro…');
+  try {
+    const res = await fetch('/api/venta-rapida', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-venta-key': clave },
+      body: JSON.stringify({ soloGuardarVenta: true, venta: ventaPendienteReintento }),
+    });
+    const data = await res.json().catch(() => null);
+    if (data && data.ok) {
+      borrarPendiente();
+      mostrarMensaje('ok', '✓ Registro guardado.');
+    } else {
+      mostrarMensaje('warn',
+        ((data && data.error) || 'Todavía no se pudo guardar.') +
+        `<br><button class="btn-mini" style="margin-top:8px" onclick="reintentarGuardarVenta()">Reintentar de nuevo</button>`);
+    }
+  } catch (e) {
+    mostrarMensaje('warn',
+      'Sin conexión.' +
+      `<br><button class="btn-mini" style="margin-top:8px" onclick="reintentarGuardarVenta()">Reintentar de nuevo</button>`);
+  }
+}
+
+// ── Inicio ──────────────────────────────────────────────────────────────
+if (clave) { validarClave(); } else { mostrarGate(''); document.getElementById('estado-conexion').textContent = 'Sin acceso'; }
+renderCarrito();
+
+if ('serviceWorker' in navigator) {
+  // Sin service worker propio todavía — el manifest ya alcanza para
+  // "agregar a inicio". Si más adelante hace falta uso offline, va acá.
+}
+</script>
+
+</body>
+</html>

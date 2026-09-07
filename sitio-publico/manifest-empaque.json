@@ -1,0 +1,14 @@
+{
+  "name": "Atrezos & Props — Empaque",
+  "short_name": "AP Empaque",
+  "description": "Control de empacado/etiquetado para el equipo de Atrezos & Props",
+  "start_url": "/empaque.html",
+  "scope": "/empaque.html",
+  "display": "standalone",
+  "background_color": "#f5f0ea",
+  "theme_color": "#506549",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

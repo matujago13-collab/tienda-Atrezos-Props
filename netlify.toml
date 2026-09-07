@@ -26,3 +26,13 @@
   from = "/api/tracking"
   to   = "/.netlify/functions/tracking"
   status = 200
+
+[[redirects]]
+  from = "/api/empaque"
+  to   = "/.netlify/functions/empaque"
+  status = 200
+
+[[redirects]]
+  from = "/api/venta-rapida"
+  to   = "/.netlify/functions/venta-rapida"
+  status = 200
