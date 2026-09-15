@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Empaque — Atrezos & Props</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bosque: #506549; --bosque-d: #3e5039; --crema: #f5f0ea;
+    --border: #e3ddd2; --muted: #8a8378; --texto: #2c2a26;
+    --danger: #b23b3b; --ok: #3a6b2f; --feria: #c9922a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Jost', sans-serif; background: var(--crema); color: var(--texto); }
+  h1, h2 { font-family: 'Cormorant Garamond', serif; }
+  header { background: var(--bosque); color: #fff; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; position: sticky; top: 0; z-index: 20; }
+  header h1 { margin: 0; font-size: 1.3rem; font-weight: 700; }
+  header .estado-conexion { font-size: .72rem; opacity: .85; }
+  main { max-width: 720px; margin: 0 auto; padding: 16px 12px 60px; }
+  .barra { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .barra label { font-size: .82rem; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .pedido { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 12px; }
+  .pedido.completo { opacity: .55; }
+  .pedido-cabecera { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+  .cliente-nombre { font-weight: 600; font-size: 1.02rem; }
+  .badge { display: inline-block; font-size: .68rem; font-weight: 600; padding: 2px 8px; border-radius: 10px; margin-left: 6px; vertical-align: middle; }
+  .badge.reservado { background: #fdf2e9; color: #a3691f; }
+  .badge.pagada { background: #e5f0e2; color: var(--ok); }
+  .fecha { font-size: .72rem; color: var(--muted); white-space: nowrap; }
+  .contacto { font-size: .82rem; color: var(--muted); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .contacto a { color: var(--bosque); text-decoration: none; font-weight: 500; }
+  .items { font-size: .85rem; margin-bottom: 8px; line-height: 1.5; }
+  .items div { display: flex; justify-content: space-between; gap: 8px; }
+  .nota { font-size: .78rem; background: var(--crema); border-radius: 5px; padding: 6px 9px; margin-bottom: 8px; color: #6a5a3a; }
+  .total { font-weight: 700; font-size: .95rem; margin-bottom: 10px; }
+  .fotos { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .fotos img { width: 58px; height: 58px; object-fit: cover; border-radius: 5px; border: 1px solid var(--border); cursor: pointer; }
+  .checks { display: flex; gap: 14px; flex-wrap: wrap; border-top: 1px dashed var(--border); padding-top: 10px; }
+  .checks label { display: flex; align-items: center; gap: 6px; font-size: .85rem; cursor: pointer; }
+  .checks input { width: 17px; height: 17px; accent-color: var(--bosque); cursor: pointer; }
+  .vacio { text-align: center; color: var(--muted); font-size: .85rem; padding: 40px 10px; }
+  .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.85); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+  .lightbox.open { display: flex; }
+  .lightbox img { max-width: 92vw; max-height: 88vh; border-radius: 6px; }
+  .gate { max-width: 340px; margin: 80px auto; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 22px; text-align: center; }
+  .gate input { width: 100%; box-sizing: border-box; padding: 9px 10px; border: 1px solid var(--border); border-radius: 5px; font-size: .95rem; margin: 10px 0; }
+  .gate button { width: 100%; padding: 10px; background: var(--bosque); color: #fff; border: none; border-radius: 5px; font-size: .95rem; cursor: pointer; }
+  .gate .error { color: var(--danger); font-size: .78rem; min-height: 1em; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📦 Empaque</h1>
+  <span class="estado-conexion" id="estado-conexion">Cargando…</span>
+</header>
+
+<main id="main">
+  <div class="gate" id="gate" style="display:none">
+    <h2 style="margin:0 0 6px">Acceso de empaque</h2>
+    <p style="font-size:.82rem;color:var(--muted);margin:0">Pedile la clave a Vardam si no la tenés.</p>
+    <input type="password" id="gate-clave" placeholder="Clave de empaque" onkeydown="if(event.key==='Enter')intentarClave()">
+    <button onclick="intentarClave()">Entrar</button>
+    <div class="error" id="gate-error"></div>
+  </div>
+
+  <div id="contenido" style="display:none">
+    <div class="barra">
+      <label><input type="checkbox" id="chk-ocultar" onchange="guardarPrefOcultar(this.checked);render()"> Ocultar ya empacados y etiquetados</label>
+    </div>
+    <div id="lista"></div>
+  </div>
+</main>
+
+<div class="lightbox" id="lightbox" onclick="cerrarLightbox()">
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<script>
+const CLAVE_SK = 'ap_empaque_clave';
+const OCULTAR_SK = 'ap_empaque_ocultar';
+let clave = localStorage.getItem(CLAVE_SK) || '';
+let pedidos = [];
+let cargando = false;
+
+function guardarPrefOcultar(v) { try { localStorage.setItem(OCULTAR_SK, v ? '1' : '0'); } catch(e) {} }
+function leerPrefOcultar() { try { return localStorage.getItem(OCULTAR_SK) === '1'; } catch(e) { return false; } }
+
+function mostrarGate(msg) {
+  document.getElementById('gate').style.display = '';
+  document.getElementById('contenido').style.display = 'none';
+  document.getElementById('gate-error').textContent = msg || '';
+}
+function ocultarGate() {
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('contenido').style.display = '';
+}
+
+function intentarClave() {
+  clave = document.getElementById('gate-clave').value.trim();
+  cargarPedidos();
+}
+
+async function cargarPedidos(silencioso) {
+  if (cargando) return;
+  cargando = true;
+  const estadoEl = document.getElementById('estado-conexion');
+  if (!silencioso) estadoEl.textContent = 'Cargando…';
+  try {
+    const res = await fetch('/api/empaque', { headers: { 'x-empaque-key': clave } });
+    if (res.status === 401) {
+      mostrarGate(clave ? 'Clave incorrecta.' : '');
+      estadoEl.textContent = 'Sin acceso';
+      cargando = false;
+      return;
+    }
+    const data = await res.json().catch(() => null);
+    if (!data || !data.ok) {
+      estadoEl.textContent = '⚠ Error al cargar';
+      cargando = false;
+      return;
+    }
+    try { localStorage.setItem(CLAVE_SK, clave); } catch(e) {}
+    ocultarGate();
+    pedidos = data.pedidos || [];
+    render();
+    estadoEl.textContent = '✓ Actualizado ' + new Date().toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' });
+  } catch (e) {
+    estadoEl.textContent = '⚠ Sin conexión — reintentando…';
+  } finally {
+    cargando = false;
+  }
+}
+
+function formatGs(n) { return 'Gs. ' + Math.round(n || 0).toLocaleString('es-PY'); }
+
+function render() {
+  document.getElementById('chk-ocultar').checked = leerPrefOcultar();
+  const ocultarCompletos = leerPrefOcultar();
+  const lista = document.getElementById('lista');
+  const visibles = pedidos.filter(p => !ocultarCompletos || !(p.empacado && p.etiquetado));
+  if (!visibles.length) {
+    lista.innerHTML = `<div class="vacio">${pedidos.length ? 'No hay pedidos pendientes de empacar/etiquetar 🎉' : 'Todavía no hay pedidos para mostrar.'}</div>`;
+    return;
+  }
+  lista.innerHTML = visibles.map(p => {
+    const completo = p.empacado && p.etiquetado;
+    const waLink = p.clienteCelular ? `https://wa.me/${p.clienteCelular.replace(/\D/g,'')}` : '';
+    const fotos = [...(p.comprobanteUrls||[]), ...(p.fotoPedidoUrls||[])];
+    return `<div class="pedido${completo ? ' completo' : ''}">
+      <div class="pedido-cabecera">
+        <div>
+          <span class="cliente-nombre">${esc(p.clienteNombre || 'Sin nombre')}</span>
+          <span class="badge ${p.estado}">${p.estado === 'pagada' ? '✓ Pagada' : '🕐 Reservado'}</span>
+        </div>
+        <span class="fecha">${p.fecha ? new Date(p.fecha).toLocaleString('es-PY', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : ''}</span>
+      </div>
+      <div class="contacto">
+        ${p.clienteCelular ? `<a href="${waLink}" target="_blank" rel="noopener">💬 ${esc(p.clienteCelular)}</a>` : '<span>Sin celular</span>'}
+        ${p.vendedorNombre ? `<span>· Vendedor: ${esc(p.vendedorNombre)}</span>` : ''}
+      </div>
+      <div class="items">
+        ${(p.items||[]).map(it => `<div><span>${it.cantidad}x ${esc(it.nombre)}</span></div>`).join('')}
+      </div>
+      ${p.notaInterna ? `<div class="nota">📝 ${esc(p.notaInterna)}</div>` : ''}
+      <div class="total">${formatGs(p.total)}</div>
+      ${fotos.length ? `<div class="fotos">${fotos.map(url => `<img src="${esc(url)}" onclick="abrirLightbox('${esc(url)}')" loading="lazy">`).join('')}</div>` : ''}
+      <div class="checks">
+        <label><input type="checkbox" ${p.empacado ? 'checked' : ''} onchange="marcar('${p.id}','empacado',this.checked)"> 📦 Empacado</label>
+        <label><input type="checkbox" ${p.etiquetado ? 'checked' : ''} onchange="marcar('${p.id}','etiquetado',this.checked)"> 🏷️ Etiquetado</label>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function marcar(id, campo, valor) {
+  // Optimista: se actualiza ya mismo en pantalla, no se espera la red.
+  const p = pedidos.find(x => x.id === id);
+  if (p) p[campo] = valor;
+  render();
+  try {
+    const body = { ventaId: id };
+    body[campo] = valor;
+    const res = await fetch('/api/empaque', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-empaque-key': clave },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => null);
+    if (!data || !data.ok) throw new Error();
+  } catch (e) {
+    // Si falló, se revierte y se avisa.
+    if (p) p[campo] = !valor;
+    render();
+    alert('No se pudo guardar — revisá tu conexión e intentá de nuevo.');
+  }
+}
+
+function abrirLightbox(url) {
+  document.getElementById('lightbox-img').src = url;
+  document.getElementById('lightbox').classList.add('open');
+}
+function cerrarLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+}
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+// Primera carga + auto-refresco cada 6s (sin recargar la página).
+cargarPedidos();
+setInterval(() => cargarPedidos(true), 6000);
+</script>
+</body>
+</html>

@@ -47,6 +47,13 @@ nav {
   display: none; align-items: center;
 }
 .feria-badge.visible { display: flex; }
+.feria-terms-link {
+  display: none; align-items: center;
+  font-size: 0.68rem; font-weight: 500; color: var(--bosque);
+  text-decoration: underline; text-underline-offset: 2px;
+  margin-left: 10px; white-space: nowrap;
+}
+.feria-terms-link.visible { display: flex; }
 .nav-right { display: flex; align-items: center; gap: 12px; }
 .nav-contact { font-size: 0.76rem; color: #888; }
 .cart-btn {
@@ -912,6 +919,7 @@ main { padding: 28px 36px 100px; flex: 1; min-width: 0; }
       <span id="logo-texto">Tienda</span>
     </a>
     <span class="feria-badge" id="feria-badge">🏷 FERIA</span>
+    <a href="bases-condiciones.html" target="_blank" rel="noopener" class="feria-terms-link" id="feria-terms-link">Sistema de compra</a>
   </div>
   <div class="nav-right">
     <span class="nav-contact" id="nav-tel"></span>
@@ -1116,6 +1124,36 @@ main { padding: 28px 36px 100px; flex: 1; min-width: 0; }
   </div>
 </div>
 
+<!-- ── SISTEMA DE COMPRA (FERIA) — se muestra solo si Modo Feria está
+     activo y todavía no se aceptó (ver chequearPopupFeriaTerminos) ── -->
+<div class="asesor-overlay" id="feria-terminos-overlay" onclick="if(event.target===this)cerrarModalFeriaTerminos(false)">
+  <div class="asesor-modal" style="max-width:460px">
+    <div class="asesor-modal-hdr">
+      <h3>🏷 Sistema de compra — Feria</h3>
+      <button class="close-btn" onclick="cerrarModalFeriaTerminos(false)">✕</button>
+    </div>
+    <div class="asesor-list" style="max-height:52vh;font-size:.82rem;line-height:1.6;color:var(--negro)">
+      <p style="font-weight:600;color:var(--bosque);text-align:center;margin-bottom:10px">Productos disponibles hasta agotar stock</p>
+      <ol style="padding-left:1.1rem;display:flex;flex-direction:column;gap:8px">
+        <li>Les facilitaremos un catálogo aquí en nuestro grupo de WhatsApp, donde podrán apreciar los descuentos.</li>
+        <li>Marcá en el catálogo los productos que vas a querer, revisá tu carrito y dale en la opción <strong>consultar por WhatsApp</strong>. Automáticamente nos llegará tu pedido por WhatsApp.</li>
+        <li>Esperá a que respondamos tu mensaje para confirmarte que los productos siguen disponibles.</li>
+        <li>Los mensajes serán respondidos por orden de llegada.</li>
+        <li>Podés pagar con Tarjeta de Crédito desde un enlace que te enviamos.</li>
+        <li>Recibimos transferencia, efectivo y POS (Tarjeta de Crédito con recarga del 5%).</li>
+        <li>Los precios de feria aún no incluyen IVA.</li>
+        <li>Si el pago del producto solicitado no se realiza dentro de los 15 minutos, el producto sigue disponible para otro interesado.</li>
+        <li>No se realizarán cambios ni devoluciones de artículos adquiridos en feria.</li>
+        <li>Los envíos por delivery o encomienda se coordinarán para dentro de las dos semanas posteriores a la compra.</li>
+      </ol>
+    </div>
+    <div class="asesor-modal-footer" style="display:flex;flex-direction:column;gap:8px;padding-top:10px">
+      <button class="add-btn agregar" style="width:100%" onclick="cerrarModalFeriaTerminos(true)">Acepto el sistema de compra</button>
+      <a href="bases-condiciones.html" target="_blank" rel="noopener" class="asesor-skip">Leer en una página aparte</a>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <div class="venta-toast" id="venta-toast">
   <span class="venta-dot"></span>
@@ -1258,6 +1296,28 @@ function continuarSinCuenta() {
   document.getElementById('cliente-overlay').classList.remove('open');
   const cb = _cbTrasLoginCliente; _cbTrasLoginCliente = null;
   if (cb) cb();
+}
+
+// ── SISTEMA DE COMPRA (FERIA) — popup de una sola vez ───────────────
+// Se muestra automáticamente al entrar si Modo Feria está activo y el
+// visitante todavía no tocó "Acepto". Una vez que acepta, queda guardado
+// en localStorage y no vuelve a aparecer (en ese navegador). Si nunca
+// acepta, puede volver a aparecer en visitas futuras mientras la Feria
+// siga activa — eso es intencional, no un bug.
+const FERIA_TERMINOS_SK = 'ap_feria_terminos_v1';
+let _feriaTerminosIntentado = false; // evita reabrir en cada refresh periódico de esta misma visita
+
+function chequearPopupFeriaTerminos(modoFeriaActivo) {
+  if (_feriaTerminosIntentado) return;
+  if (!modoFeriaActivo) return;
+  if (localStorage.getItem(FERIA_TERMINOS_SK) === '1') return;
+  _feriaTerminosIntentado = true;
+  document.getElementById('feria-terminos-overlay')?.classList.add('open');
+}
+
+function cerrarModalFeriaTerminos(aceptado) {
+  if (aceptado) localStorage.setItem(FERIA_TERMINOS_SK, '1');
+  document.getElementById('feria-terminos-overlay')?.classList.remove('open');
 }
 // Guarda el pedido del carrito en el panel de Ventas (pendiente de confirmar),
 // en paralelo al mensaje que se manda por WhatsApp — no bloquea ni interrumpe
@@ -1885,6 +1945,8 @@ function aplicarSiteConfig() {
   // modoFeria: siteConfig tiene prioridad sobre productos.json/config
   const mf = sc.modoFeria ?? (datos?.config?.modoFeria ?? false);
   document.getElementById('feria-badge').classList.toggle('visible', mf);
+  document.getElementById('feria-terms-link')?.classList.toggle('visible', mf);
+  chequearPopupFeriaTerminos(mf);
 
   // Banner feria
   const bannerEl = document.getElementById('feria-banner');

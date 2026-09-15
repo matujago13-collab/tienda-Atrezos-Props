@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de compra — Atrezos & Props</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sage:   #9CAF88;
+  --bosque: #506549;
+  --crema:  #f5f0ea;
+  --negro:  #1a1a1a;
+  --blanco: #ffffff;
+  --feria:  #b06030;
+  --danger: #b85c5c;
+  --border: #e3ddd2;
+  --muted:  #8a8378;
+  --shadow: 0 2px 12px rgba(0,0,0,0.07);
+}
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Jost', sans-serif; background: var(--crema); color: var(--negro); min-height: 100vh; }
+h1, h2 { font-family: 'Cormorant Garamond', serif; font-weight: 600; }
+
+nav { padding: 16px 20px; background: var(--blanco); border-bottom: 1px solid var(--border); }
+.nav-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.35rem; font-weight: 600; color: var(--bosque); text-decoration: none; }
+
+main { max-width: 620px; margin: 0 auto; padding: 30px 18px 60px; }
+
+.card { background: var(--blanco); border: 1px solid var(--border); border-radius: 10px; padding: 26px 28px; box-shadow: var(--shadow); }
+.card h1 { font-size: 1.7rem; color: var(--bosque); margin-bottom: 4px; }
+.card .subt { font-size: .84rem; color: var(--muted); margin-bottom: 22px; }
+
+.nota-stock {
+  background: var(--crema); border-radius: 6px; padding: 10px 14px;
+  font-size: .85rem; font-weight: 500; color: var(--bosque);
+  text-align: center; margin-bottom: 20px;
+}
+
+ol.reglas { list-style: none; counter-reset: regla; margin-bottom: 4px; }
+ol.reglas li {
+  counter-increment: regla; position: relative; padding: 0 0 16px 34px;
+  font-size: .92rem; line-height: 1.6; color: var(--negro);
+}
+ol.reglas li::before {
+  content: counter(regla); position: absolute; left: 0; top: 1px;
+  width: 22px; height: 22px; border-radius: 50%; background: var(--bosque); color: #fff;
+  font-size: .74rem; font-weight: 600; display: flex; align-items: center; justify-content: center;
+}
+ol.reglas li strong { color: var(--bosque); }
+
+.volver { display: block; text-align: center; margin-top: 22px; font-size: .82rem; color: var(--bosque); text-decoration: underline; }
+.fecha-act { text-align: center; font-size: .72rem; color: var(--muted); margin-top: 16px; }
+</style>
+</head>
+<body>
+
+<nav><a href="/" class="nav-logo">🌿 Atrezos &amp; Props</a></nav>
+
+<main>
+  <div class="card">
+    <h1>Sistema de compra</h1>
+    <p class="subt">Cómo funciona la Feria en nuestro catálogo</p>
+
+    <div class="nota-stock">Productos disponibles hasta agotar stock</div>
+
+    <ol class="reglas">
+      <li>Les facilitaremos un catálogo aquí en nuestro grupo de WhatsApp, donde podrán apreciar los descuentos.</li>
+      <li>Marcá en el catálogo los productos que vas a querer, revisá tu carrito y dale en la opción <strong>consultar por WhatsApp</strong>. Automáticamente nos llegará tu pedido por WhatsApp.</li>
+      <li>Esperá a que respondamos tu mensaje para confirmarte que los productos siguen disponibles.</li>
+      <li>Los mensajes serán respondidos por orden de llegada.</li>
+      <li>Podés pagar con Tarjeta de Crédito desde un enlace que te enviamos.</li>
+      <li>Recibimos transferencia, efectivo y POS (Tarjeta de Crédito con recarga del 5%).</li>
+      <li>Los precios de feria aún no incluyen IVA.</li>
+      <li>Si el pago del producto solicitado no se realiza dentro de los 15 minutos, el producto sigue disponible para otro interesado.</li>
+      <li>No se realizarán cambios ni devoluciones de artículos adquiridos en feria.</li>
+      <li>Los envíos por delivery o encomienda se coordinarán para dentro de las dos semanas posteriores a la compra.</li>
+    </ol>
+
+    <a href="/" class="volver">← Volver al catálogo</a>
+  </div>
+</main>
+
+</body>
+</html>

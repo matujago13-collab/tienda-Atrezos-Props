@@ -1,0 +1,14 @@
+{
+  "name": "Atrezos & Props — Venta rápida",
+  "short_name": "AP Venta",
+  "description": "Cargar ventas desde el celular para Atrezos & Props",
+  "start_url": "/venta-rapida.html",
+  "scope": "/venta-rapida.html",
+  "display": "standalone",
+  "background_color": "#f5f0ea",
+  "theme_color": "#506549",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
