@@ -302,14 +302,14 @@ nav {
   top: calc(var(--nav-h, 57px) + var(--toolbar-h, 45px));
   max-height: calc(100vh - var(--nav-h, 57px) - var(--toolbar-h, 45px));
   overflow-y: auto;
-  border-right: 1px solid var(--arena);
-  background: var(--blanco);
+  border-right: 2px solid var(--dorado);
+  background: var(--bosque);
   padding: 0 0 48px;
   scrollbar-width: thin;
-  scrollbar-color: var(--arena) transparent;
+  scrollbar-color: var(--dorado) transparent;
 }
 .nav-sidebar::-webkit-scrollbar { width: 3px; }
-.nav-sidebar::-webkit-scrollbar-thumb { background: var(--arena); border-radius: 2px; }
+.nav-sidebar::-webkit-scrollbar-thumb { background: var(--dorado); border-radius: 2px; }
 
 /* Overlay: solo activo en mobile */
 .sidebar-overlay { display: none; }
@@ -341,25 +341,25 @@ nav {
   align-items: center;
   gap: 8px;
   padding: 16px 16px 14px;
-  border-bottom: 1px solid var(--arena);
+  border-bottom: 1px solid rgba(255,255,255,.15);
   margin-bottom: 4px;
 }
-.sidebar-search-wrap svg { color: #bbb; flex-shrink: 0; }
+.sidebar-search-wrap svg { color: rgba(255,255,255,.55); flex-shrink: 0; }
 .sidebar-search-input {
   border: none;
   background: transparent;
   font-family: 'Jost', sans-serif;
   font-size: 0.82rem;
-  color: var(--negro);
+  color: #fff;
   outline: none;
   width: 100%;
 }
-.sidebar-search-input::placeholder { color: #ccc; }
+.sidebar-search-input::placeholder { color: rgba(255,255,255,.4); }
 
 /* ── Secciones del sidebar ── */
 .sidebar-section {
   padding: 16px 16px 8px;
-  border-bottom: 1px solid var(--arena);
+  border-bottom: 1px solid rgba(255,255,255,.12);
   margin-bottom: 0;
 }
 .sidebar-section:last-child { border-bottom: none; }
@@ -376,11 +376,11 @@ nav {
   font-weight: 700;
   letter-spacing: 0.13em;
   text-transform: uppercase;
-  color: #bbb;
+  color: var(--dorado-claro);
 }
 .sidebar-total-count {
   font-size: 0.68rem;
-  color: #bbb;
+  color: rgba(255,255,255,.45);
   font-variant-numeric: tabular-nums;
 }
 
@@ -394,7 +394,8 @@ nav {
   padding: 8px 6px 8px 10px;
   font-size: 0.83rem;
   font-family: 'Jost', sans-serif;
-  color: #666;
+  color: #fff;
+  font-weight: 500;
   background: none;
   border: none;
   border-radius: 5px;
@@ -405,32 +406,32 @@ nav {
   gap: 8px;
   margin-bottom: 1px;
 }
-.sidebar-filter:hover { background: var(--crema); color: var(--bosque); }
-.sidebar-filter:hover .cat-count { color: var(--bosque); }
+.sidebar-filter:hover { background: rgba(255,255,255,.08); color: var(--dorado-claro); }
+.sidebar-filter:hover .cat-count { color: var(--dorado-claro); }
 .sidebar-filter.active {
-  background: var(--crema);
-  color: var(--bosque);
-  font-weight: 600;
+  background: rgba(201,162,39,.16);
+  color: #fff;
+  font-weight: 700;
 }
 .sidebar-filter.active::before {
   content: '';
   position: absolute;
   left: 0; top: 20%; bottom: 20%;
   width: 3px;
-  background: var(--bosque);
+  background: var(--dorado);
   border-radius: 0 2px 2px 0;
 }
 .sidebar-filter-name { flex: 1; min-width: 0; }
 .cat-count {
   font-size: 0.68rem;
-  color: #ccc;
+  color: rgba(255,255,255,.4);
   min-width: 18px;
   text-align: right;
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
   transition: color 0.15s;
 }
-.sidebar-filter.active .cat-count { color: var(--sage); font-weight: 700; }
+.sidebar-filter.active .cat-count { color: var(--dorado-claro); font-weight: 700; }
 
 /* ── Filtros de disponibilidad ── */
 .avail-filter {
@@ -441,7 +442,7 @@ nav {
   padding: 7px 10px;
   font-size: 0.82rem;
   font-family: 'Jost', sans-serif;
-  color: #888;
+  color: rgba(255,255,255,.7);
   background: none;
   border: none;
   border-radius: 5px;
@@ -450,14 +451,14 @@ nav {
   margin-bottom: 1px;
   position: relative;
 }
-.avail-filter:hover { background: var(--crema); color: var(--bosque); }
-.avail-filter.active { color: var(--bosque); font-weight: 600; background: var(--crema); }
+.avail-filter:hover { background: rgba(255,255,255,.08); color: var(--dorado-claro); }
+.avail-filter.active { color: #fff; font-weight: 600; background: rgba(201,162,39,.16); }
 .avail-filter.active::before {
   content: '';
   position: absolute;
   left: 0; top: 20%; bottom: 20%;
   width: 3px;
-  background: var(--bosque);
+  background: var(--dorado);
   border-radius: 0 2px 2px 0;
 }
 .avail-dot {
