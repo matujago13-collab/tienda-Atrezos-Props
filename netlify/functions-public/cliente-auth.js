@@ -1,34 +1,25 @@
 /**
  * Netlify Function: POST /api/cliente-auth
  * ─────────────────────────────────────────────────────────────────────
- * Login liviano para clientes de la tienda pública: celular + PIN de 4-6
- * dígitos (sin contraseña tradicional, sin recuperación de clave — el
- * mismo criterio de "bajo costo, simplicidad" que el resto del proyecto).
+ * Identificación liviana de clientes: solo celular + nombre.
+ * Sin PIN, sin contraseña.
  *
- * Guarda las cuentas en clientes-auth.json (privado, sin share público en
- * ownCloud — mismo criterio que costos-internos.json), un archivo NUEVO
- * y separado de clientes.json a propósito: clientes.json lo administra
- * el panel de Ventas (admin.html / netlify/functions/clientes.js), que
- * reescribe la lista completa con una whitelist fija de campos cada vez
- * que el staff guarda cambios. Si guardáramos el PIN ahí, el próximo
- * guardado del panel lo borraría sin querer. Este archivo nuevo no lo
- * toca nadie más, así que no hay riesgo de pisarlo.
+ * Flujo unificado:
+ *  1. Recibe { celular, nombre? }
+ *  2. Busca en clientes-auth.json por celular normalizado
+ *  3. Si existe → retorna el cliente existente (auto-reconocimiento)
+ *  4. Si no existe → crea cuenta nueva (requiere nombre)
+ *  5. Nunca duplica usuarios (unicidad por celular)
  *
- * Cuando alguien se registra, ADEMÁS se crea (si no existe ya un cliente
- * con ese celular) un registro liviano en clientes.json — mismo esquema
- * exacto que usa netlify/functions/clientes.js y admin-server.js — para
- * que el cliente aparezca directo en la pestaña Clientes del Panel de
- * Ventas, sin que el staff tenga que cargarlo a mano. Si ya existe un
- * cliente con ese celular (cargado antes por el staff), no se toca —
- * nunca se pisan datos que el staff ya cargó (dirección, notas, etc.).
+ * También sincroniza (best-effort) con clientes.json para que el cliente
+ * aparezca en el Panel de Ventas sin que el staff tenga que cargarlo a mano.
  *
- * body: { accion: 'registro', celular, nombre, pin }
- * body: { accion: 'login',    celular, pin }
- * Nunca expone pinHash/pinSalt en la respuesta.
+ * body: { celular, nombre? }
+ * (El campo "accion" ya no es necesario pero se acepta y se ignora
+ *  para compatibilidad con versiones anteriores del frontend.)
  */
 
-const axios  = require('axios');
-const crypto = require('crypto');
+const axios = require('axios');
 
 const HEADERS_CORS = {
   'Content-Type': 'application/json',
@@ -55,15 +46,12 @@ function rutaPrivada(ocBase, nombreArchivo) {
   return rutaBase.replace(/\/[^/]+$/, '') + '/' + nombreArchivo;
 }
 
-/** Lee un JSON privado cualquiera de ownCloud (genérico — lo usan clientes-auth.json y clientes.json). */
 async function leerJsonPrivadoGenerico(nombreArchivo, defaultValue) {
   const { ocUrl, ocUser, ocPass, ocBase } = ocEnv();
   if (!ocUrl || !ocUser || !ocPass) return defaultValue;
   try {
     const davBase = ocUrl.replace(/\/$/, '');
     const ruta    = rutaPrivada(ocBase, nombreArchivo);
-    // encodeURI preserva "/" pero codifica espacios — ownCloud no acepta
-    // espacios crudos en el path (mismo criterio que davPut() en admin-server.js).
     const { data } = await axios.get(davBase + encodeURI(ruta), {
       auth: { username: ocUser, password: ocPass },
       responseType: 'text',
@@ -101,7 +89,10 @@ async function guardarJsonPrivadoGenerico(nombreArchivo, data) {
 
 async function leerJsonPrivado() {
   const data = await leerJsonPrivadoGenerico(NOMBRE_ARCHIVO, VACIO);
-  return { cuentas: Array.isArray(data.cuentas) ? data.cuentas : [], actualizado: data.actualizado || null };
+  return {
+    cuentas: Array.isArray(data.cuentas) ? data.cuentas : [],
+    actualizado: data.actualizado || null,
+  };
 }
 async function guardarJsonPrivado(data) {
   return guardarJsonPrivadoGenerico(NOMBRE_ARCHIVO, data);
@@ -109,9 +100,7 @@ async function guardarJsonPrivado(data) {
 
 /**
  * Best-effort: crea un cliente liviano en clientes.json si no existe ya
- * uno con ese celular. Mismo esquema exacto que clientes.js/admin-server.js
- * para que el panel lo pueda editar y volver a guardar sin perder nada.
- * Nunca lanza — si falla, el registro de la cuenta igual se completa.
+ * uno con ese celular. Nunca lanza — si falla, el registro igual se completa.
  */
 async function sincronizarClientePublico(nombre, celular) {
   try {
@@ -123,27 +112,12 @@ async function sincronizarClientePublico(nombre, celular) {
     clientes.push({
       id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
       nombre, rucCi: '', ciudad: '', direccion: '', datosEnvio: '', metodoEnvio: '',
-      celular, notas: 'Se registró solo desde la tienda web.',
+      celular, notas: 'Se identificó solo desde la tienda web.',
       creadoEn: ahora, actualizadoEn: ahora,
     });
     await guardarJsonPrivadoGenerico('clientes.json', { clientes, actualizado: ahora });
   } catch (err) {
     console.error('[cliente-auth] No se pudo sincronizar con clientes.json:', err.message);
-  }
-}
-
-/** Hash con salt (scrypt, módulo nativo de Node) — mismo criterio que lib/owncloud-privado.js */
-function hashPin(pin, salt) {
-  const s = salt || crypto.randomBytes(16).toString('hex');
-  const hash = crypto.scryptSync(String(pin), s, 64).toString('hex');
-  return { salt: s, hash };
-}
-function verificarPin(pin, salt, hashEsperado) {
-  const { hash } = hashPin(pin, salt);
-  try {
-    return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(hashEsperado, 'hex'));
-  } catch {
-    return false;
   }
 }
 
@@ -167,67 +141,58 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: HEADERS_CORS, body: JSON.stringify({ ok: false, error: 'JSON inválido.' }) };
   }
 
-  const accion  = String(body.accion || '').trim();
   const celular = normalizarCelular(body.celular);
-  const pin     = String(body.pin || '').trim();
   const nombre  = String(body.nombre || '').trim();
 
   if (!celular || celular.replace('+', '').length < 6) {
     return { statusCode: 400, headers: HEADERS_CORS, body: JSON.stringify({ ok: false, error: 'Celular inválido.' }) };
   }
-  if (!/^\d{4,6}$/.test(pin)) {
-    return { statusCode: 400, headers: HEADERS_CORS, body: JSON.stringify({ ok: false, error: 'El PIN debe tener entre 4 y 6 dígitos.' }) };
-  }
 
   const data = await leerJsonPrivado();
 
-  if (accion === 'registro') {
-    if (!nombre || nombre.length < 2) {
-      return { statusCode: 400, headers: HEADERS_CORS, body: JSON.stringify({ ok: false, error: 'Ingresá tu nombre.' }) };
+  // ── Buscar cuenta existente por celular ──────────────────────────────
+  const existente = data.cuentas.find(c => c.celular === celular);
+
+  if (existente) {
+    // Cliente ya conocido → auto-reconocimiento, sin PIN ni contraseña
+    // Si viene nombre nuevo (distinto al guardado), actualizarlo
+    if (nombre && nombre !== existente.nombre) {
+      existente.nombre = nombre;
+      existente.actualizadoEn = new Date().toISOString();
+      data.actualizado = existente.actualizadoEn;
+      await guardarJsonPrivado(data); // best-effort, no bloquea la respuesta si falla
     }
-    const existente = data.cuentas.find(c => c.celular === celular);
-    if (existente) {
-      return { statusCode: 409, headers: HEADERS_CORS, body: JSON.stringify({ ok: false, error: 'Ya existe una cuenta con este celular. Iniciá sesión.' }) };
-    }
-    const { salt, hash } = hashPin(pin);
-    const nuevaCuenta = {
-      id: 'ca' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
-      celular, nombre,
-      pinHash: hash, pinSalt: salt,
-      creadoEn: new Date().toISOString(),
-      actualizadoEn: new Date().toISOString(),
-    };
-    data.cuentas.push(nuevaCuenta);
-    data.actualizado = new Date().toISOString();
-    const resultado = await guardarJsonPrivado(data);
-    if (!resultado.ok) {
-      return { statusCode: 500, headers: HEADERS_CORS, body: JSON.stringify({ ok: false, error: resultado.error }) };
-    }
-    await sincronizarClientePublico(nombre, celular); // best-effort, no bloquea la respuesta si falla
+    await sincronizarClientePublico(existente.nombre, celular);
     return {
       statusCode: 200, headers: HEADERS_CORS,
-      body: JSON.stringify({ ok: true, cliente: { id: nuevaCuenta.id, nombre: nuevaCuenta.nombre, celular: nuevaCuenta.celular } }),
+      body: JSON.stringify({ ok: true, esNuevo: false, cliente: { id: existente.id, nombre: existente.nombre, celular: existente.celular } }),
     };
   }
 
-  if (accion === 'login') {
-    const cuenta = data.cuentas.find(c => c.celular === celular);
-    if (!cuenta || !cuenta.pinHash || !cuenta.pinSalt || !verificarPin(pin, cuenta.pinSalt, cuenta.pinHash)) {
-      return { statusCode: 401, headers: HEADERS_CORS, body: JSON.stringify({ ok: false, error: 'Celular o PIN incorrectos.' }) };
-    }
-    // sincronizarClientePublico() ya revisa si el celular existe en clientes.json
-    // antes de crear nada, así que llamarla en cada login es inofensivo (no
-    // duplica ni pisa datos). Esto autocura cuentas que se registraron antes
-    // de que existiera esta sincronización, o cuyo intento de sync en el
-    // registro falló silenciosamente (ej. ownCloud caído en ese momento) —
-    // sin esto, esas cuentas quedaban "no encontradas" para siempre en el
-    // Panel de Ventas por más que el cliente vuelva a iniciar sesión.
-    await sincronizarClientePublico(cuenta.nombre, cuenta.celular); // best-effort, no bloquea la respuesta si falla
+  // ── Cuenta nueva → requiere nombre ──────────────────────────────────
+  if (!nombre || nombre.length < 2) {
     return {
-      statusCode: 200, headers: HEADERS_CORS,
-      body: JSON.stringify({ ok: true, cliente: { id: cuenta.id, nombre: cuenta.nombre, celular: cuenta.celular } }),
+      statusCode: 400, headers: HEADERS_CORS,
+      body: JSON.stringify({ ok: false, error: 'Ingresá tu nombre para continuar.', requiereNombre: true }),
     };
   }
 
-  return { statusCode: 400, headers: HEADERS_CORS, body: JSON.stringify({ ok: false, error: 'Acción inválida.' }) };
+  const nuevaCuenta = {
+    id: 'ca' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+    celular, nombre,
+    creadoEn: new Date().toISOString(),
+    actualizadoEn: new Date().toISOString(),
+  };
+  data.cuentas.push(nuevaCuenta);
+  data.actualizado = nuevaCuenta.creadoEn;
+
+  const resultado = await guardarJsonPrivado(data);
+  if (!resultado.ok) {
+    return { statusCode: 500, headers: HEADERS_CORS, body: JSON.stringify({ ok: false, error: resultado.error }) };
+  }
+  await sincronizarClientePublico(nombre, celular);
+  return {
+    statusCode: 200, headers: HEADERS_CORS,
+    body: JSON.stringify({ ok: true, esNuevo: true, cliente: { id: nuevaCuenta.id, nombre: nuevaCuenta.nombre, celular: nuevaCuenta.celular } }),
+  };
 };

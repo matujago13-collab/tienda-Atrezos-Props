@@ -110,15 +110,23 @@ exports.handler = async (event) => {
     try {
       const body = JSON.parse(event.body || '{}');
 
-      // Rama admin: el panel de Ventas manda la lista completa (para marcar
-      // un pedido como 'convertido' o 'descartado' tras revisarlo). A
-      // diferencia de la creación pública de más abajo, esta SÍ exige clave.
-      if (Array.isArray(body.pedidos)) {
+      // Rama admin: el panel de Ventas manda el pedido que realmente tocó
+      // (body.pedido) para marcarlo 'convertido' o 'descartado' tras
+      // revisarlo. A diferencia de la creación pública de más abajo, esta
+      // SÍ exige clave. body.pedidos (array completo) se acepta por
+      // compatibilidad hacia atrás, pero YA NO se guarda tal cual: se
+      // combina por id contra la copia fresca de ownCloud (igual que
+      // combinarPorId() en admin-server.js), para que un dispositivo con
+      // una copia vieja en memoria no pueda pisarle el estado a un pedido
+      // que otro vendedor ya procesó mientras tanto (eso hacía que pedidos
+      // ya convertidos en venta "resucitaran" como pendientes).
+      if (body.pedido || Array.isArray(body.pedidos)) {
         if (!claveOk(event)) {
           return { statusCode: 401, headers: HEADERS_CORS, body: JSON.stringify({ ok: false, error: 'Clave incorrecta.' }) };
         }
         const ESTADOS_VALIDOS = ['pendiente', 'convertido', 'descartado'];
-        const pedidos = body.pedidos.map(p => {
+        const entrada = body.pedido ? [body.pedido] : body.pedidos;
+        const pedidosEntrantes = entrada.map(p => {
           const items = Array.isArray(p.items) ? p.items.map(it => ({
             catId: it.catId, prodId: it.prodId, nombre: String(it.nombre || ''),
             cantidad: Math.max(0, Number(it.cantidad) || 0),
@@ -147,6 +155,15 @@ exports.handler = async (event) => {
             actualizadoEn:  new Date().toISOString(),
           };
         });
+
+        // Combinar por id contra la copia fresca — nunca contra lo que el
+        // cliente tenía en memoria. Un id que esté guardado pero no venga
+        // en esta entrada siempre se conserva tal cual (nunca se borra acá).
+        const actual = await leerJsonPrivado();
+        const mapa = new Map((actual.pedidos || []).map(p => [p.id, p]));
+        pedidosEntrantes.forEach(p => { if (p.id) mapa.set(p.id, p); });
+        const pedidos = [...mapa.values()];
+
         const data = { pedidos, actualizado: new Date().toISOString() };
         const resultado = await guardarJsonPrivado(data);
         return {

@@ -868,14 +868,7 @@ main { padding: 28px 36px 100px; flex: 1; min-width: 0; }
 }
 .asesor-skip:hover { color: #666; }
 
-/* ── CLIENTE LOGIN MODAL (reusa .asesor-overlay / .asesor-modal) ── */
-.cliente-tabs { display: flex; border-bottom: 1px solid var(--arena); }
-.cliente-tab {
-  flex: 1; background: none; border: none; padding: 10px 6px; cursor: pointer;
-  font-family: 'Jost', sans-serif; font-size: .8rem; color: #999;
-  border-bottom: 2px solid transparent; transition: all .15s;
-}
-.cliente-tab.active { color: var(--bosque); border-bottom-color: var(--bosque); font-weight: 600; }
+/* ── CLIENTE MODAL (reusa .asesor-overlay / .asesor-modal) ── */
 .cliente-form { padding: 16px 20px 8px; }
 .cliente-form label {
   display: block; font-size: .72rem; color: #888; margin-bottom: 4px; margin-top: 12px;
@@ -1097,26 +1090,20 @@ main { padding: 28px 36px 100px; flex: 1; min-width: 0; }
   </div>
 </div>
 
-<!-- ── CLIENTE LOGIN/REGISTRO MODAL ── -->
+<!-- ── CLIENTE MODAL ── -->
 <div class="asesor-overlay" id="cliente-overlay" onclick="if(event.target===this)cerrarModalCliente()">
   <div class="asesor-modal">
     <div class="asesor-modal-hdr">
-      <h3 id="cliente-modal-title">Mi cuenta</h3>
+      <h3>Identificate para continuar</h3>
       <button class="close-btn" onclick="cerrarModalCliente()">✕</button>
     </div>
-    <div class="cliente-tabs">
-      <button class="cliente-tab active" id="tab-login" onclick="cambiarTabCliente('login')">Ya tengo cuenta</button>
-      <button class="cliente-tab" id="tab-registro" onclick="cambiarTabCliente('registro')">Crear cuenta</button>
-    </div>
     <form class="cliente-form" id="cliente-form" onsubmit="return enviarFormCliente(event)">
-      <label for="cliente-nombre" id="lbl-cliente-nombre" style="display:none">Tu nombre</label>
-      <input type="text" id="cliente-nombre" placeholder="Ej: María González" style="display:none">
+      <label for="cliente-nombre">Tu nombre</label>
+      <input type="text" id="cliente-nombre" placeholder="Ej: María González" autocomplete="name">
       <label for="cliente-celular">Celular</label>
-      <input type="tel" id="cliente-celular" placeholder="Ej: 0981 234 567" required>
-      <label for="cliente-pin">PIN (4 a 6 dígitos)</label>
-      <input type="password" id="cliente-pin" inputmode="numeric" pattern="[0-9]{4,6}" placeholder="••••" required>
+      <input type="tel" id="cliente-celular" placeholder="Ej: 0981 234 567" required autocomplete="tel">
       <div class="cliente-error" id="cliente-error"></div>
-      <button type="submit" class="cliente-submit-btn" id="cliente-submit-btn">Ingresar</button>
+      <button type="submit" class="cliente-submit-btn" id="cliente-submit-btn">Continuar</button>
     </form>
     <div class="asesor-modal-footer">
       <button class="asesor-skip" onclick="continuarSinCuenta()">Continuar sin cuenta</button>
@@ -1209,10 +1196,10 @@ function normalizarTexto(s) {
 // el resto del sitio (ver @media (hover:none) en el CSS de arriba).
 const HOVER_CAPAZ = window.matchMedia('(hover: hover)').matches;
 
-// ── CLIENTE (login liviano celular + PIN) ───────────────────────────
+// ── CLIENTE (identificación por celular — sin PIN) ───────────────────
 const CLIENTE_SK = 'ap_cliente_v1';
 let clienteActual = null;      // { id, nombre, celular } | null
-let _cbTrasLoginCliente = null; // función a reintentar tras loguearse
+let _cbTrasLoginCliente = null; // función a reintentar tras identificarse
 
 function cargarClienteGuardado() {
   try {
@@ -1240,28 +1227,15 @@ function abrirCuenta() {
 function abrirModalCliente() {
   document.getElementById('cliente-error').classList.remove('show');
   document.getElementById('cliente-form').reset();
-  cambiarTabCliente('login');
   document.getElementById('cliente-overlay').classList.add('open');
 }
 function cerrarModalCliente() {
   document.getElementById('cliente-overlay').classList.remove('open');
   _cbTrasLoginCliente = null;
 }
-function cambiarTabCliente(tab) {
-  const esRegistro = tab === 'registro';
-  document.getElementById('tab-login').classList.toggle('active', !esRegistro);
-  document.getElementById('tab-registro').classList.toggle('active', esRegistro);
-  document.getElementById('lbl-cliente-nombre').style.display = esRegistro ? '' : 'none';
-  document.getElementById('cliente-nombre').style.display = esRegistro ? '' : 'none';
-  document.getElementById('cliente-submit-btn').textContent = esRegistro ? 'Crear cuenta' : 'Ingresar';
-  document.getElementById('cliente-form').dataset.accion = esRegistro ? 'registro' : 'login';
-}
 async function enviarFormCliente(ev) {
   ev.preventDefault();
-  const form = document.getElementById('cliente-form');
-  const accion  = form.dataset.accion || 'login';
   const celular = document.getElementById('cliente-celular').value.trim();
-  const pin     = document.getElementById('cliente-pin').value.trim();
   const nombre  = document.getElementById('cliente-nombre').value.trim();
   const errEl   = document.getElementById('cliente-error');
   const btn     = document.getElementById('cliente-submit-btn');
@@ -1270,12 +1244,15 @@ async function enviarFormCliente(ev) {
   try {
     const resp = await fetch('/api/cliente-auth', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accion, celular, pin, nombre }),
+      body: JSON.stringify({ celular, nombre }),
     });
     const data = await resp.json();
     if (!data.ok) {
       errEl.textContent = data.error || 'No se pudo procesar. Intentá de nuevo.';
       errEl.classList.add('show');
+      if (data.requiereNombre) {
+        document.getElementById('cliente-nombre').focus();
+      }
       btn.disabled = false;
       return false;
     }

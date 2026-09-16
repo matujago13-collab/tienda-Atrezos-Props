@@ -11,9 +11,11 @@
  * (OWNCLOUD_URL/USER/PASS/RUTA_BASE) que ya usa pedido-pendiente.js — ese
  * archivo lo arma y sube admin-server.js cada vez que cambia el estado de
  * una venta (sincronizarTrackingPublico()), y a propósito NO incluye nada
- * sensible: sin costos, sin notaInterna, sin vendedorNombre, sin
- * comprobantes ni datos de otros clientes — solo lo que el cliente
- * necesita ver de SU pedido.
+ * sensible: sin costos, sin notaInterna, sin vendedorNombre, sin datos de
+ * otros clientes — solo lo que el cliente necesita ver de SU pedido.
+ * SÍ incluye (a pedido explícito del dueño de la tienda, 15/09/2026): todas
+ * las fotos cargadas para ese pedido — comprobante de pago, foto del
+ * pedido y guía/boleta de envío — en fotosDespacho.
  *
  * Nunca se manda el archivo completo al navegador: se lee entero acá
  * (server-side, con las credenciales privadas) y se devuelve solo el

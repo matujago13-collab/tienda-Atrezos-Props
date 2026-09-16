@@ -9,6 +9,8 @@ node_modules/
 !sitio-publico/icons/*.png
 .netlify/
 .env
+
+# ── Datos privados (nunca a git) ──
 costos-internos.json
 notas-pendientes.json
 clientes.json
@@ -16,25 +18,57 @@ ventas.json
 vendedores.json
 productos-stock-sync-estado.json
 ventas-movil-vistas-whatsapp.json
+compras.json
+proveedores.json
+transportistas.json
+pedidos-pendientes.json
+pedidos-vistos-whatsapp.json
+productos.json
+siteConfig.json
 
-# ── Historial/Deshacer: copias de versiones anteriores de los archivos de
-# arriba (ver writeJsonAtomic en admin-server.js). Mismo criterio: nunca a git.
+# ── Estado en tiempo de ejecución (se regeneran solos) ──
+empaque-estado.json
+manifest-empaque.json
+manifest-venta-rapida.json
+sitio-publico/manifest-empaque.json
+sitio-publico/manifest-venta-rapida.json
+sitio-publico/siteConfig.json
+
+# ── Historial/Deshacer: copias de versiones anteriores ──
 backups/
 
+# ── Archivos de respaldo (.bak y variantes) ──
+*.bak
+*.bak-*
+
 # ── Panel admin: solo interno, corre local con admin-server.js ──
-# No se sube a Netlify ni al repo público.
 /admin.html
 /admin-server.js
 /server.js
 /package.json
 /package-lock.json
 netlify/functions/
-netlify.toml.bak-full-admin
 
-# ── Scripts y utilidades locales ──
+# ── Archivos temporales / extraídos por herramientas de desarrollo ──
+admin00.html
+*_extracted.js
+deploy-log.txt
+_to_delete/
+
+# ── Scripts de utilidad/migración local ──
 *.bat
 *.vbs
 *.ps1
 migrar-imagenes-base64.js
 upload-fixed.js
 productos_importar.json
+sync-proveedores-owncloud.js
+test-tracking-local.js
+corregir-pedidos-reales.js
+
+# ── Bot WhatsApp: credenciales de sesión (MUY SENSIBLE) ──
+bot-whatsapp/auth-whatsapp/
+bot-whatsapp/package-lock.json
+
+# ── Avatares (imágenes locales, no van a producción) ──
+avatar/
