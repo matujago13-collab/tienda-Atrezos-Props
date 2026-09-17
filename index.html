@@ -953,6 +953,57 @@ main { padding: 28px 36px 100px; flex: 1; min-width: 0; }
   </div>
 </div>
 
+<!-- ── CLIENTE MODAL ── -->
+<div class="asesor-overlay" id="cliente-overlay" onclick="if(event.target===this)cerrarModalCliente()">
+  <div class="asesor-modal">
+    <div class="asesor-modal-hdr">
+      <h3>Identificate para continuar</h3>
+      <button class="close-btn" onclick="cerrarModalCliente()">✕</button>
+    </div>
+    <form class="cliente-form" id="cliente-form" onsubmit="return enviarFormCliente(event)">
+      <label for="cliente-nombre">Tu nombre</label>
+      <input type="text" id="cliente-nombre" placeholder="Ej: María González" autocomplete="name">
+      <label for="cliente-celular">Celular</label>
+      <input type="tel" id="cliente-celular" placeholder="Ej: 0981 234 567" required autocomplete="tel">
+      <div class="cliente-error" id="cliente-error"></div>
+      <button type="submit" class="cliente-submit-btn" id="cliente-submit-btn">Continuar</button>
+    </form>
+    <div class="asesor-modal-footer">
+      <button class="asesor-skip" onclick="continuarSinCuenta()">Continuar sin cuenta</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SISTEMA DE COMPRA (FERIA) — se muestra solo si Modo Feria está
+     activo y todavía no se aceptó (ver chequearPopupFeriaTerminos) ── -->
+<div class="asesor-overlay" id="feria-terminos-overlay" onclick="if(event.target===this)cerrarModalFeriaTerminos(false)">
+  <div class="asesor-modal" style="max-width:460px">
+    <div class="asesor-modal-hdr">
+      <h3>🏷 Sistema de compra — Feria</h3>
+      <button class="close-btn" onclick="cerrarModalFeriaTerminos(false)">✕</button>
+    </div>
+    <div class="asesor-list" style="max-height:52vh;font-size:.82rem;line-height:1.6;color:var(--negro)">
+      <p style="font-weight:600;color:var(--bosque);text-align:center;margin-bottom:10px">Productos disponibles hasta agotar stock</p>
+      <ol style="padding-left:1.1rem;display:flex;flex-direction:column;gap:8px">
+        <li>Les facilitaremos un catálogo aquí en nuestro grupo de WhatsApp, donde podrán apreciar los descuentos.</li>
+        <li>Marcá en el catálogo los productos que vas a querer, revisá tu carrito y dale en la opción <strong>consultar por WhatsApp</strong>. Automáticamente nos llegará tu pedido por WhatsApp.</li>
+        <li>Esperá a que respondamos tu mensaje para confirmarte que los productos siguen disponibles.</li>
+        <li>Los mensajes serán respondidos por orden de llegada.</li>
+        <li>Podés pagar con Tarjeta de Crédito desde un enlace que te enviamos.</li>
+        <li>Recibimos transferencia, efectivo y POS (Tarjeta de Crédito con recarga del 5%).</li>
+        <li>Los precios de feria aún no incluyen IVA.</li>
+        <li>Si el pago del producto solicitado no se realiza dentro de los 15 minutos, el producto sigue disponible para otro interesado.</li>
+        <li>No se realizarán cambios ni devoluciones de artículos adquiridos en feria.</li>
+        <li>Los envíos por delivery o encomienda se coordinarán para dentro de las dos semanas posteriores a la compra.</li>
+      </ol>
+    </div>
+    <div class="asesor-modal-footer" style="display:flex;flex-direction:column;gap:8px;padding-top:10px">
+      <button class="add-btn agregar" style="width:100%" onclick="cerrarModalFeriaTerminos(true)">Acepto el sistema de compra</button>
+      <a href="bases-condiciones.html" target="_blank" rel="noopener" class="asesor-skip">Leer en una página aparte</a>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -989,6 +1040,150 @@ let datos = null;
 let carrito = [];
 let categoriaActiva = 'todas';
 let terminoBusqueda = '';
+
+// Compara sin importar mayúsculas/minúsculas ni acentos (tildes, diéresis…):
+// "cancion" encuentra "canción", "Débora" encuentra "debora". Se usa tanto
+// para armar el índice de búsqueda de cada tarjeta (data-nombre) como para
+// el texto que se tipea en el buscador.
+function normalizarTexto(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+// true en desktop/mouse (dispara el cambio de foto al pasar el cursor),
+// false en pantallas táctiles (donde "hover" no existe de verdad y el
+// cambio se dispara al tocar). Se calcula una sola vez: mismo criterio que
+// el resto del sitio (ver @media (hover:none) en el CSS de arriba).
+const HOVER_CAPAZ = window.matchMedia('(hover: hover)').matches;
+
+// ── CLIENTE (identificación por celular — sin PIN) ───────────────────
+const CLIENTE_SK = 'ap_cliente_v1';
+let clienteActual = null;      // { id, nombre, celular } | null
+let _cbTrasLoginCliente = null; // función a reintentar tras identificarse
+
+function cargarClienteGuardado() {
+  try {
+    const raw = localStorage.getItem(CLIENTE_SK);
+    clienteActual = raw ? JSON.parse(raw) : null;
+  } catch(e) { clienteActual = null; }
+  actualizarBotonCuenta();
+}
+function actualizarBotonCuenta() {
+  const lbl = document.getElementById('account-label');
+  if (!lbl) return;
+  lbl.textContent = clienteActual ? clienteActual.nombre.split(' ')[0] : 'Ingresar';
+}
+function abrirCuenta() {
+  if (clienteActual) {
+    if (confirm(`Hola ${clienteActual.nombre}. ¿Cerrar sesión?`)) {
+      clienteActual = null;
+      localStorage.removeItem(CLIENTE_SK);
+      actualizarBotonCuenta();
+    }
+    return;
+  }
+  abrirModalCliente();
+}
+function abrirModalCliente() {
+  document.getElementById('cliente-error').classList.remove('show');
+  document.getElementById('cliente-form').reset();
+  document.getElementById('cliente-overlay').classList.add('open');
+}
+function cerrarModalCliente() {
+  document.getElementById('cliente-overlay').classList.remove('open');
+  _cbTrasLoginCliente = null;
+}
+async function enviarFormCliente(ev) {
+  ev.preventDefault();
+  const celular = document.getElementById('cliente-celular').value.trim();
+  const nombre  = document.getElementById('cliente-nombre').value.trim();
+  const errEl   = document.getElementById('cliente-error');
+  const btn     = document.getElementById('cliente-submit-btn');
+  errEl.classList.remove('show');
+  btn.disabled = true;
+  try {
+    const resp = await fetch('/api/cliente-auth', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ celular, nombre }),
+    });
+    const data = await resp.json();
+    if (!data.ok) {
+      errEl.textContent = data.error || 'No se pudo procesar. Intentá de nuevo.';
+      errEl.classList.add('show');
+      if (data.requiereNombre) {
+        document.getElementById('cliente-nombre').focus();
+      }
+      btn.disabled = false;
+      return false;
+    }
+    clienteActual = data.cliente;
+    localStorage.setItem(CLIENTE_SK, JSON.stringify(clienteActual));
+    actualizarBotonCuenta();
+    document.getElementById('cliente-overlay').classList.remove('open');
+    const cb = _cbTrasLoginCliente; _cbTrasLoginCliente = null;
+    if (cb) cb();
+  } catch(e) {
+    errEl.textContent = 'No se pudo conectar. Revisá tu conexión e intentá de nuevo.';
+    errEl.classList.add('show');
+  }
+  btn.disabled = false;
+  return false;
+}
+function continuarSinCuenta() {
+  document.getElementById('cliente-overlay').classList.remove('open');
+  const cb = _cbTrasLoginCliente; _cbTrasLoginCliente = null;
+  if (cb) cb();
+}
+
+// ── SISTEMA DE COMPRA (FERIA) — popup de una sola vez ───────────────
+// Se muestra automáticamente al entrar si Modo Feria está activo y el
+// visitante todavía no tocó "Acepto". Una vez que acepta, queda guardado
+// en localStorage y no vuelve a aparecer (en ese navegador). Si nunca
+// acepta, puede volver a aparecer en visitas futuras mientras la Feria
+// siga activa — eso es intencional, no un bug.
+const FERIA_TERMINOS_SK = 'ap_feria_terminos_v1';
+let _feriaTerminosIntentado = false; // evita reabrir en cada refresh periódico de esta misma visita
+
+function chequearPopupFeriaTerminos(modoFeriaActivo) {
+  if (_feriaTerminosIntentado) return;
+  if (!modoFeriaActivo) return;
+  if (localStorage.getItem(FERIA_TERMINOS_SK) === '1') return;
+  _feriaTerminosIntentado = true;
+  document.getElementById('feria-terminos-overlay')?.classList.add('open');
+}
+
+function cerrarModalFeriaTerminos(aceptado) {
+  if (aceptado) localStorage.setItem(FERIA_TERMINOS_SK, '1');
+  document.getElementById('feria-terminos-overlay')?.classList.remove('open');
+}
+// Guarda el pedido del carrito en el panel de Ventas (pendiente de confirmar),
+// en paralelo al mensaje que se manda por WhatsApp — no bloquea ni interrumpe
+// el envío por WhatsApp si esto falla (fire-and-forget).
+function guardarPedidoPendiente(asesorNombre) {
+  if (!carrito.length) return;
+  try {
+    const modoFeria = siteCfg.modoFeria ?? datos?.config?.modoFeria;
+    const items = carrito.map(i => ({
+      catId: i._catId, prodId: i.id, nombre: i.nombre, cantidad: i.qty,
+      precioUnit: precioEfectivo(i, modoFeria),
+    }));
+    fetch('/api/pedido-pendiente', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clienteId: clienteActual?.id || '',
+        clienteNombre: clienteActual?.nombre || '',
+        celular: clienteActual?.celular || '',
+        items,
+        conFactura: !!cartFactura,
+        conTarjeta: !!cartTC,
+        // Si el cliente eligió un asesor específico en el carrito, se manda
+        // su nombre para que el Panel de Ventas lo pueda pretildar como
+        // vendedor al convertir este pedido en venta (ver
+        // pedidoPendienteConvertir() en admin.html).
+        asesorNombre: asesorNombre || '',
+      }),
+    }).catch(() => {});
+  } catch(e) {}
+}
 
 // ── CARRITO ID & HISTORIAL ──────────────────────────────────────────
 const CART_HISTORY_SK = 'ap_cart_history_v1';
@@ -1086,7 +1281,7 @@ function elegirAsesor(asesorId) {
     abrirWhatsApp(a.telefono, _pendingWaMsg);
     _pendingWaMsg = null;
     guardarHistorialCarrito('enviado');
-    descontarStockCarrito(); carrito = []; resetCarritoId();
+    carrito = []; resetCarritoId();
     actualizarCarritoUI(); cerrarCarrito();
   }
 }
@@ -1103,7 +1298,7 @@ function continuarSinAsesor() {
   if (num && msg) {
     abrirWhatsApp(num, msg);
     guardarHistorialCarrito('enviado');
-    descontarStockCarrito(); carrito = []; resetCarritoId();
+    carrito = []; resetCarritoId();
     actualizarCarritoUI(); cerrarCarrito();
   }
 }
@@ -1397,7 +1592,6 @@ function aplicarSiteConfig() {
   // Info contacto
   renderInfoContacto(sc, datos?.config);
 
-  // Carrito visible / oculto
   const cartBtn = document.querySelector('.cart-btn');
   if (cartBtn) cartBtn.style.display = sc.carritoVisible !== false ? '' : 'none';
 }
@@ -1416,7 +1610,7 @@ function inicializar() {
   actualizarCarritoUI();
 }
 
-// ── SIDEBAR TOGGLE ────────────────────────────────────────────────
+// ── SIDEBAR TOGGLE ──────────────────────────────────────────────────────────
 function toggleSidebar(forceOpen) {
   const sidebar = document.getElementById('nav-sidebar');
   if (!sidebar) return;
@@ -1434,7 +1628,7 @@ function toggleSidebar(forceOpen) {
   }
 }
 
-// ── FILTROS ───────────────────────────────────────────────────────
+// ── FILTROS ──────────────────────────────────────────────────────────
 function renderFiltros(categorias) {
   const el = document.getElementById('sidebar-filters');
   if (!el) return;
@@ -1578,7 +1772,7 @@ function aplicarFiltros() {
   document.getElementById('empty-search').style.display = totalVisible > 0 ? 'none' : 'block';
 }
 
-// ── CATÁLOGO ───────────────────────────────────────────────────────
+// ── CATÁLOGO ─────────────────────────────────────────────────────
 function renderCatalogo(categorias, config) {
   if (!categorias || categorias.length === 0) {
     document.getElementById('empty-search').style.display = 'block';
@@ -1764,7 +1958,7 @@ function renderTarjeta(p, config, catId = '') {
     </div>`;
 }
 
-// ── CARRITO ─────────────────────────────────────────────────────────
+// ── CARRITO ─────────────────────────────────────────────────────
 function todosLosProductos() {
   return datos.categorias.flatMap(c => c.productos);
 }
