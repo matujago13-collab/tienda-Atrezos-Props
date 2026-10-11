@@ -7,6 +7,9 @@ node_modules/
 # Excepción: íconos de la PWA (empaque/venta rápida) — son parte del
 # sitio, no fotos de producto (esas siguen viviendo en ownCloud, nunca acá).
 !sitio-publico/icons/*.png
+
+# Excepción: imágenes de dispatch (diapositivas Escuela dominical).
+!dispatch/*.jpg
 .netlify/
 .env
 
