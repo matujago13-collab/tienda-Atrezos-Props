@@ -10,6 +10,7 @@ node_modules/
 
 # Excepción: imágenes de dispatch (diapositivas Escuela dominical).
 !dispatch/*.jpg
+!dispatch/**/*.jpg
 .netlify/
 .env
 
